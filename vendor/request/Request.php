@@ -9,13 +9,10 @@
 
 		private $server = [];
 
-		private $route = null;
-
 		private $input = null;
 
-		public function __construct(Route $route,Input $input){
+		public function __construct(,Input $input){
 			$this->server = $_SERVER;
-			$this->route = $route;
 			$this->input = $input;
 		}
 
