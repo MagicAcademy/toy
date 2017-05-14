@@ -2,7 +2,6 @@
 	
 	namespace vendor\request;
 
-	use vendor\request\Route;
 	use vendor\request\RequestException;
 	use vendor\request\Input;
 

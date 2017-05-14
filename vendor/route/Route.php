@@ -1,8 +1,8 @@
 <?php
 	
-	namespace vendor\request;
+	namespace vendor\route;
 
-	use vendor\request\RequestException;
+	use \Exception;
 
 	class Route{
 
@@ -37,13 +37,13 @@
 			$argLength = count($arguments);
 
 			if($argLength < 2){
-				throw new RequestException('can\' match');
+				throw new Exception('can\' match');
 			}
 
 			$upper = strtoupper($name);
 
 			if(!array_key_exists($upper, $this->matchList)){
-				throw new RequestException('not found this method :' . $name);
+				throw new Exception('not found this method :' . $name);
 			}
 
 			$this->matchList[$upper]['pattern'][] = $this->convertRegular($arguments[0]);
@@ -62,7 +62,7 @@
 			$end = '/';
 
 			$match = [
-				'@number@' => '\d+',
+				'@number@' => $this->numberRegular(),
 				'@string@' => '\w+',
 				'@more@' => '.*'
 			];
@@ -81,6 +81,10 @@
 			}
 
 			return $start . strtr(preg_quote($uri,'/'),$match) . $end;
+		}
+
+		private function numberRegular(){
+			return '(\d+|\d+.\d+)';
 		}
 
 		/**
@@ -108,7 +112,7 @@
 				echo 'not found';
 				$content = ob_get_contents();
 				ob_flush();
-				header($_SERVER['SERVER_PROTOCOL'] . ' 404 not found');
+				http_response_code(404);
 				ob_end_flush();
 			};
 		}
