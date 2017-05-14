@@ -44,10 +44,10 @@
 
 			if(!array_key_exists($upper, $this->matchList)){
 				throw new RequestException('not found this method :' . $name);
-			}else{
-				$this->matchList[$upper]['pattern'][] = $this->convertRegular($arguments[0]);
-				$this->matchList[$upper]['match'][] = $arguments[1];
 			}
+
+			$this->matchList[$upper]['pattern'][] = $this->convertRegular($arguments[0]);
+			$this->matchList[$upper]['match'][] = $arguments[1];
 		}
 
 		/**
