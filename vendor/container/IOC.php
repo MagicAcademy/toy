@@ -25,7 +25,8 @@
 				self::$Binding[$abstract] = [
 												'concrete' => $concrete,
 												'isSingle' => false,
-												'single' => null
+												'single' => null,
+												'alreadySingle' => false
 											];
 			}
 		}
@@ -39,26 +40,30 @@
 		 */
 		
 		public static function make($abstract){
-			if(!array_key_exists($abstract, self::$Binding)){
-				self::$Binding[$abstract] = [
-												'concrete' => $abstract,
-												'isSingle' => false,
-												'single' => null
-											];
-			}
 
 			$target = self::$Binding[$abstract];
 
 			if($target['isSingle']){
-				return $target['single'];
-			}else{
-				$concrete = $target['concrete'];
-				$reflect = null;
-				if($concrete instanceof Closure){
-					return self::buildClosure(self::getFunction($concrete));
+				if($target['alreadySingle']){
+					return $target['single'];
 				}else{
-					return self::buildClass(self::getConstruct($concrete));
+					$single = self::build($target);
+					self::$Binding[$abstract]['alreadySingle'] = true;
+					self::$Binding[$abstract]['single'] = $single;
+					return $single;
 				}
+			}else{
+				return self::build($target);
+			}
+		}
+
+		private static function build($target){
+			$concrete = $target['concrete'];
+			$reflect = null;
+			if($concrete instanceof Closure){
+				return self::buildClosure(self::getFunction($concrete));
+			}else{
+				return self::buildClass(self::getConstruct($concrete));
 			}
 		}
 
@@ -147,9 +152,11 @@
 		 * @param     [string]                   $abstract [description]
 		 */
 		public static function setSingle($abstract,$concrete){
-			self::bind($abstract,$concrete);
-			$single = self::make($abstract);
-			self::$Binding[$abstract]['single'] = $single;
-			self::$Binding[$abstract]['isSingle'] = true;
+			self::$Binding[$abstract] = [
+											'concrete' => $concrete,
+											'isSingle' => true,
+											'single' => null,
+											'alreadySingle' => false
+										];
 		}
 	}
