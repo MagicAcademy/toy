@@ -3,6 +3,7 @@
 	namespace vendor\route;
 
 	use \Exception;
+	use vendor\route\RouteCollection;
 
 	class Route{
 
@@ -47,7 +48,7 @@
 			}
 
 			$this->matchList[$upper]['pattern'][] = $this->convertRegular($arguments[0]);
-			$this->matchList[$upper]['match'][] = $arguments[1];
+			$this->matchList[$upper]['match'][] = new RouteCollection($arguments[1]);
 		}
 
 		/**
@@ -102,7 +103,7 @@
 
 			foreach($matchs as $key=>$item){
 				if(preg_match($item, $uri)){
-					return $this->matchList[$method]['match'][$key];
+					return $this->matchList[$method]['match'][$key]->done();
 				}
 			}
 

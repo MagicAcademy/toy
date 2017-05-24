@@ -1,20 +1,24 @@
 <?php
 	
-	require '../vendor/request/Route.php';
-	require '../vendor/request/RequestException.php';
+	require '../vendor/route/Route.php';
+	require '../vendor/route/RouteCollection.php';
 
-	use vendor\request\Route;
-	use vendor\request\RequestException;
+	use vendor\route\Route;
 
 	$route = new Route();
 	
 	$route->get('/get',function(){
 		var_dump('get');
 	});
+	
+	$route->get('/get/@number@',function(){
+		var_dump('/get/@number@');
+	});
 
 	$route->get('/get/@more@',function(){
 		var_dump('/get/@more@');
 	});
+
 
 	$route->get('/get/test',function(){
 		var_dump('get/test');
@@ -26,6 +30,4 @@
 
 	$r = $route->match();
 
-	if(!is_null($r)){
-		$r();
-	}
+	var_dump($r);
