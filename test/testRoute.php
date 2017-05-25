@@ -15,13 +15,17 @@
 		var_dump('/get/@number@');
 	});
 
-	$route->get('/get/@more@',function(){
-		var_dump('/get/@more@');
-	});
+	// $route->get('/get/@more@',function(){
+	// 	var_dump('/get/@more@');
+	// });
 
 
 	$route->get('/get/test',function(){
 		var_dump('get/test');
+	})->before(function(){
+		var_dump('before');
+	})->after(function(){
+		var_dump('after');
 	});
 
 	$route->post('post',function(){
