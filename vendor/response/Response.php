@@ -2,16 +2,22 @@
 
 	namespace vendor\response;
 
-	class Response{
+	use \Exception;
+	use vendor\response\ResponseException;
+	use \toyInterfaces\ResponseInterface;
+
+	class Response implements ResponseInterface{
 
 		private $response = '';
 
-		public function __construct(){
-			ob_start();
+		private $exception = null;
+
+		public function __construct(ResponseException $exception){
+			$this->exception = $exception;
 		}
 
-		public function __destruct(){
-			ob_end_flush();
+		public function init(){
+			ob_start();
 		}
 
 		public function statusCode($status_code = 200){
@@ -20,8 +26,48 @@
 		}
 
 		public function json($s){
-			header('Content-type: application/json');
-			$this->reposonse = json_encode($s);
+			try{
+				header('Content-Type: application/json; charset=utf-8');
+				$this->response = json_encode($s,JSON_ERROR_UTF8);
+				$this->statusCode(200);
+				return $this;
+			}catch(ResponseException $e){
+				$this->exception = $e;
+				return $this->error($e);
+			}
 		}
 
+		public function string($s){
+			try{
+				header('Content-Type: text/html');
+				$this->response = $s;
+			}catch(ResponseException $e){
+				$this->exception = $e;
+				return $this->error($e);
+			}
+		}
+
+		public function make($s){
+			try{
+				if(is_array($s) || is_object($s)){
+					return $this->json($s);
+				}
+				return $this->string($s);
+			}catch(ResponseException $e){
+				return $this->error($e);
+			}
+		}
+
+		public function complete(){
+			echo $this->response;
+			ob_end_flush();
+		}
+
+		public function error(Exception $e){
+			header('Content-Type: text/html; charset=utf-8');
+			$this->statusCode(500);
+			$this->response = $e->getTraceAsString();
+			$this->complete();
+			exit();
+		}
 	}
