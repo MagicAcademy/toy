@@ -36,10 +36,12 @@
 
 		public function before($middleware){
 			$this->_before = $this->build($middleware);
+			return $this;
 		}
 
 		public function after($middleware){
-			$this->after = $this->build($middleware);
+			$this->_after = $this->build($middleware);
+			return $this;
 		}
 
 		public function done(){

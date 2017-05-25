@@ -48,7 +48,11 @@
 			}
 
 			$this->matchList[$upper]['pattern'][] = $this->convertRegular($arguments[0]);
-			$this->matchList[$upper]['match'][] = new RouteCollection($arguments[1]);
+			
+			$collection = new RouteCollection($arguments[1]);
+			$this->matchList[$upper]['match'][] = $collection;
+
+			return $collection;
 		}
 
 		/**
