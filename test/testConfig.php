@@ -6,6 +6,4 @@
 
 	$config = new Config('../app/config/');
 
-	$config->iter();
-
 	var_dump($config);
