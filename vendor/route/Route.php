@@ -4,8 +4,11 @@
 
 	use \Exception;
 	use vendor\route\RouteCollection;
+	use toyInterfaces\ResponseInterface;
 
 	class Route{
+
+		private $response = null;
 
 		private $matchList = [
 								'GET' => [
@@ -25,6 +28,10 @@
 											'match' => []
 										]
 							];
+
+		public function __construct(ResponseInterface $response){
+			$this->response = $response;
+		}
 
 		/**
 		 * [__call description]
@@ -111,7 +118,7 @@
 				}
 			}
 
-			return function(){
+			return call_user_func(function(){
 				// http_response_code(404);
 				ob_start();
 				echo 'not found';
@@ -119,6 +126,6 @@
 				ob_flush();
 				http_response_code(404);
 				ob_end_flush();
-			};
+			});
 		}
 	}

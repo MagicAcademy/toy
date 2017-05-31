@@ -2,9 +2,9 @@
 
 	namespace vendor\response;
 
-	use \Exception;
+	// use \Exception;
 	use vendor\response\ResponseException;
-	use \toyInterfaces\ResponseInterface;
+	use toyInterfaces\ResponseInterface;
 
 	class Response implements ResponseInterface{
 
@@ -12,9 +12,7 @@
 
 		private $exception = null;
 
-		public function __construct(ResponseException $exception){
-			$this->exception = $exception;
-		}
+		private $config = [];
 
 		public function init(){
 			ob_start();
