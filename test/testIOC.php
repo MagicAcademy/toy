@@ -5,7 +5,9 @@
 	// require '../../vendor/class_load/ClassLoader.php';
 
 	require '../vendor/container/IOC.php';
+	require '../vendor/container/IOCException.php';
 	use vendor\container\IOC;
+	use vendor\container\IOCException;
 
 	interface A{
 
