@@ -40,13 +40,13 @@
 
 				$realPath = $dir . $path;
 
-				if( file_exists($realPath) && is_dir($realPath) ){
+				if( is_dir($realPath) ){
 
 					$this->dirIter($realPath);
 				}else{
 					$pathinfo = pathinfo($path);
 
-					if( file_exists($realPath) && is_file($realPath) && $pathinfo['extension'] === 'php' ){
+					if( is_file($realPath) && $pathinfo['extension'] === 'php' ){
 						
 						$tmpPath = $dir . basename($path,'.php');
 

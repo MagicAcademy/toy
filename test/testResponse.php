@@ -1,8 +1,8 @@
 <?php
 
-	require '../interface/ResponseInterface.php';
+	require '../toyInterfaces/ResponseInterface.php';
 	require '../vendor/response/Response.php';
-	require '../vendor/response/ResponseException.php';
+	require '../vendor/exception/ResponseException.php';
 
 	use vendor\response\Response;
 	use vendor\response\ResponseException;

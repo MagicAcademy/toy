@@ -16,11 +16,11 @@
 			$this->input = $input;
 		}
 
-		public function route(){
-			return $this->route;
-		}
-
 		public function input(){
 			return $this->input;
+		}
+
+		public function getQuery(){
+			
 		}
 	}

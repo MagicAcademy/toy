@@ -21,5 +21,5 @@
 
 		$fileName = str_replace('\\', DIRECTORY_SEPAPATOR, base_path($fileName));
 
-		require_once $fileName;
+		if(file_exists($fileName))require_once $fileName;
 	});

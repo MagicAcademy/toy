@@ -5,10 +5,13 @@
 	use \Exception;
 	use vendor\route\RouteCollection;
 	use toyInterfaces\ResponseInterface;
+	use toyInterfaces\NotFoundInterface;
 
 	class Route{
 
 		private $response = null;
+
+		private $notFound = null;
 
 		private $matchList = [
 								'GET' => [
@@ -29,8 +32,9 @@
 										]
 							];
 
-		public function __construct(ResponseInterface $response){
+		public function __construct(ResponseInterface $response,NotFoundInterface $notFound = null){
 			$this->response = $response;
+			$this->notFound = $notFound;
 		}
 
 		/**
@@ -117,15 +121,19 @@
 					return $this->matchList[$method]['match'][$key]->done();
 				}
 			}
-
-			return call_user_func(function(){
-				// http_response_code(404);
-				ob_start();
-				echo 'not found';
-				$content = ob_get_contents();
-				ob_flush();
-				http_response_code(404);
-				ob_end_flush();
-			});
+			
+			if(is_null($this->notFound)){
+				return call_user_func(function(){
+					// http_response_code(404);
+					ob_start();
+					echo 'not found';
+					$content = ob_get_contents();
+					ob_flush();
+					http_response_code(404);
+					ob_end_flush();
+				});
+			}else{
+				throw $this->notFound;
+			}
 		}
 	}

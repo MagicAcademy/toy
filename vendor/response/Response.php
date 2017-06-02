@@ -2,9 +2,8 @@
 
 	namespace vendor\response;
 
-	// use \Exception;
-	use vendor\response\ResponseException;
 	use toyInterfaces\ResponseInterface;
+	use \Exception;
 
 	class Response implements ResponseInterface{
 
@@ -29,7 +28,7 @@
 				$this->response = json_encode($s,JSON_ERROR_UTF8);
 				$this->statusCode(200);
 				return $this;
-			}catch(ResponseException $e){
+			}catch(Exception $e){
 				$this->exception = $e;
 				return $this->error($e);
 			}
@@ -39,7 +38,7 @@
 			try{
 				header('Content-Type: text/html');
 				$this->response = $s;
-			}catch(ResponseException $e){
+			}catch(Exception $e){
 				$this->exception = $e;
 				return $this->error($e);
 			}
@@ -51,7 +50,7 @@
 					return $this->json($s);
 				}
 				return $this->string($s);
-			}catch(ResponseException $e){
+			}catch(Exception $e){
 				return $this->error($e);
 			}
 		}
@@ -63,9 +62,6 @@
 
 		public function error(Exception $e){
 			header('Content-Type: text/html; charset=utf-8');
-			$this->statusCode(500);
-			$this->response = $e->getTraceAsString();
-			$this->complete();
-			exit();
+			$this->response = $e;
 		}
 	}

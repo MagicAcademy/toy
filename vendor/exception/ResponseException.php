@@ -10,4 +10,7 @@
 			parent::__construct($message,$code);
 		}
 
+		public function __toString(){
+			return $this->getTraceAsString();
+		}
 	}
