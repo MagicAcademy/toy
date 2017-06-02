@@ -3,6 +3,7 @@
 	namespace vendor\route;
 
 	use \Closure;
+	use vendor\container\IOC;
 
 	class RouteCollection {
 
@@ -12,7 +13,10 @@
 
 		private $_current = null;
 
-		public function __construct($current){
+		private $ioc = null;
+
+		public function __construct($current,IOC $ioc = null){
+			$this->ioc = $ioc;
 			$this->_before = $this->defaultInit();
 			$this->_current = $current;
 			$this->_after = $this->defaultInit();
@@ -45,7 +49,7 @@
 		}
 
 		public function done(){
-			return call_user_func($this->_after,call_user_func($this->_current,call_user_func($this->_before)));
+			return call_user_func($this->_after,call_user_func($this->_current,call_user_func($this->_before,$this->ioc)));
 		}
 
 	}

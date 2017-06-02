@@ -6,10 +6,11 @@
 	use vendor\route\RouteCollection;
 	use toyInterfaces\ResponseInterface;
 	use toyInterfaces\NotFoundInterface;
+	use vendor\container\IOC;
 
 	class Route{
 
-		private $response = null;
+		private $ioc = null;
 
 		private $notFound = null;
 
@@ -32,8 +33,8 @@
 										]
 							];
 
-		public function __construct(ResponseInterface $response,NotFoundInterface $notFound = null){
-			$this->response = $response;
+		public function __construct(IOC $ioc = null,NotFoundInterface $notFound = null){
+			$this->ioc = $ioc;
 			$this->notFound = $notFound;
 		}
 
@@ -60,7 +61,7 @@
 
 			$this->matchList[$upper]['pattern'][] = $this->convertRegular($arguments[0]);
 			
-			$collection = new RouteCollection($arguments[1]);
+			$collection = new RouteCollection($arguments[1],$this->ioc);
 			$this->matchList[$upper]['match'][] = $collection;
 
 			return $collection;

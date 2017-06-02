@@ -10,7 +10,26 @@
 
 	class IOC{
 
-		private static $Binding = [];
+		private $Binding = [];
+
+		public static $instance = null;
+
+		public function __construct(){}
+
+		public function __clone(){}
+
+		public static function getInstance(){
+			if( !(self::$instance instanceof self) ){
+				self::$instance = new self();
+				self::$instance->Binding['IOC'] = [
+												'concrete' => null,
+												'isSingle' => true,
+												'single' => self::$instance,
+												'alreadySingle' => true
+												];
+			}
+			return self::$instance;
+		}
 
 		/**
 		 * [bind 绑定一个匿名函数或者一个字符串类名,]
@@ -19,10 +38,10 @@
 		 * @param     string                   $abstract 对$concrete的一个映射名称
 		 * @param     Closure or string        $concrete 一个匿名函数或一个字符串类名
 		 */
-		public static function bind($abstract, $concrete){
+		public function bind($abstract, $concrete){
 			
-			if(!array_key_exists($abstract, self::$Binding)){
-				self::$Binding[$abstract] = [
+			if(!array_key_exists($abstract, $this->Binding)){
+				$this->Binding[$abstract] = [
 												'concrete' => $concrete,
 												'isSingle' => false,
 												'single' => null,
@@ -39,17 +58,17 @@
 		 * @return    closure|object                     [description]
 		 */
 		
-		public static function make($abstract){
+		public function make($abstract){
 
-			$target = self::$Binding[$abstract];
+			$target = $this->Binding[$abstract];
 
 			if($target['isSingle']){
 				if($target['alreadySingle']){
 					return $target['single'];
 				}else{
 					$single = self::build($target);
-					self::$Binding[$abstract]['alreadySingle'] = true;
-					self::$Binding[$abstract]['single'] = $single;
+					$this->Binding[$abstract]['alreadySingle'] = true;
+					$this->Binding[$abstract]['single'] = $single;
 					return $single;
 				}
 			}else{
@@ -64,7 +83,7 @@
 		 * @param     [type]                   $target [description]
 		 * @return    [type]                           [description]
 		 */
-		private static function build($target){
+		private function build($target){
 			$concrete = $target['concrete'];
 			$reflect = null;
 			if($concrete instanceof Closure){
@@ -81,7 +100,7 @@
 		 * @param     array                    $parameters [description]
 		 * @return    [type]                               [description]
 		 */
-		private static function dependParameters(array $parameters){
+		private function dependParameters(array $parameters){
 			$depends = [];
 			$depend = null;
 			
@@ -122,7 +141,7 @@
 		 * @param     [type]                   $reflect [description]
 		 * @return    class                             [description]
 		 */
-		private static function buildClass($reflect){
+		private function buildClass($reflect){
 			$constructor = $reflect->getConstructor();
 
 			if(!is_null($constructor)){
@@ -140,7 +159,7 @@
 		 * @param     [type]                   $reflect [description]
 		 * @return    Closure                           [description]
 		 */
-		private static function buildClosure($reflect){
+		private function buildClosure($reflect){
 			$parameters = self::dependParameters($reflect->getParameters());
 			return $reflect->invokeArgs($parameters);
 		}
@@ -152,7 +171,7 @@
 		 * @param     [type]                   $concrete [description]
 		 * @return    ReflectionClass                    [description]
 		 */
-		private static function getConstruct($concrete){
+		private function getConstruct($concrete){
 			return new ReflectionClass($concrete);
 		}
 
@@ -163,7 +182,7 @@
 		 * @param     [type]                   $concrete [description]
 		 * @return    ReflectionFunction                 [description]
 		 */
-		private static function getFunction($concrete){
+		private function getFunction($concrete){
 			return new ReflectionFunction($concrete);
 		}
 
@@ -173,8 +192,8 @@
 		 * @DateTime  2017-05-07T16:10:46+0800
 		 * @param     [string]                   $abstract [description]
 		 */
-		public static function setSingle($abstract,$concrete){
-			self::$Binding[$abstract] = [
+		public function setSingle($abstract,$concrete){
+			$this->Binding[$abstract] = [
 											'concrete' => $concrete,
 											'isSingle' => true,
 											'single' => null,

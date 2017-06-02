@@ -10,17 +10,18 @@
 	use \Exception;
 	use vendor\exception\NotFoundException;
 
-	IOC::setSingle('Config',Config::class);
-	IOC::bind('ResponseException',ResponseException::class);
-	IOC::setSingle('ResponseInterface',Response::class);
-	IOC::setSingle('Route',Route::class);
-	IOC::bind('NotFoundInterface',NotFoundException::class);
-	
+	$ioc = IOC::getInstance();
+	$ioc->setSingle('Config',Config::class);
+	$ioc->bind('ResponseException',ResponseException::class);
+	$ioc->setSingle('ResponseInterface',Response::class);
+	$ioc->setSingle('Route',Route::class);
+	$ioc->bind('NotFoundInterface',NotFoundException::class);
 
-	$response = IOC::make('ResponseInterface');
+
+	$response = $ioc->make('ResponseInterface');
 	$response->init();
 	try{
-		$route = IOC::make('Route');
+		$route = $ioc->make('Route');
 		require 'app/route.php';
 		$route->match();
 	}catch(NotFoundException $e){
