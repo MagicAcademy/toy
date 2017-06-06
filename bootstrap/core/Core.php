@@ -17,11 +17,15 @@
 	$ioc->setSingle('Route',Route::class);
 	$ioc->bind('NotFoundInterface',NotFoundException::class);
 
-
+	$config = $ioc->make('Config');
+	$config->setPath('app/config');
+	$config->iter();
+	
 	$response = $ioc->make('ResponseInterface');
 	$response->init();
 	try{
 		$route = $ioc->make('Route');
+		$route->setConfig($config);
 		require 'app/route.php';
 		$route->match();
 	}catch(NotFoundException $e){

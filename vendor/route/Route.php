@@ -6,13 +6,14 @@
 	use vendor\route\RouteCollection;
 	use toyInterfaces\ResponseInterface;
 	use toyInterfaces\NotFoundInterface;
-	use vendor\container\IOC;
+	use \ArrayAccess;
+	
 
 	class Route{
 
-		private $ioc = null;
-
 		private $notFound = null;
+
+		private $config = [];
 
 		private $matchList = [
 								'GET' => [
@@ -33,9 +34,14 @@
 										]
 							];
 
-		public function __construct(IOC $ioc = null,NotFoundInterface $notFound = null){
-			$this->ioc = $ioc;
+		public function __construct(NotFoundInterface $notFound = null){
 			$this->notFound = $notFound;
+		}
+
+		public function setConfig($config){
+			if( is_array($config) || ($config instanceof ArrayAccess) ){
+				$this->config = $config;
+			}
 		}
 
 		/**
@@ -61,7 +67,7 @@
 
 			$this->matchList[$upper]['pattern'][] = $this->convertRegular($arguments[0]);
 			
-			$collection = new RouteCollection($arguments[1],$this->ioc);
+			$collection = new RouteCollection($arguments[1],$this->config);
 			$this->matchList[$upper]['match'][] = $collection;
 
 			return $collection;
