@@ -3,24 +3,17 @@
 	namespace vendor\request;
 
 	use vendor\request\RequestException;
-	use vendor\request\Input;
 
 	class Request{
 
 		private $server = [];
 
-		private $input = null;
-
-		public function __construct(,Input $input){
+		public function __construct(){
 			$this->server = $_SERVER;
-			$this->input = $input;
 		}
 
-		public function input(){
-			return $this->input;
-		}
-
-		public function getQuery(){
-			
+		public function __get($key){
+			$key = strtoupper($key);
+			return isset($this->server[$key])?$this->server[$key]:'';
 		}
 	}
