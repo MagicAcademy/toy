@@ -2,10 +2,6 @@
 	
 	namespace vendor\orm;
 
+	class Update{
 
-
-	class ORM{
-
-		
-		
 	}

@@ -21,9 +21,9 @@
 					]
 				]);
 	$orm->bind('select',function($connect){
-		return function($parameters)use($connect){
+		return function($args)use($connect){
 			$select = new Select($connect);
-			return $select->select($parameters);
+			return $select->select($args);
 		};
 	});
 
@@ -31,6 +31,8 @@
 		$statment->select('product_name','id')
 				->table('goods')
 				->where('amount',100)
+				->orWhere('id',1)
+				->limit('1',10)
 				->get()
 		);
 
@@ -52,4 +54,25 @@
 	var_dump(
 		$statment->select()->table('goods')
 				->one()
+		);
+
+	var_dump(
+		$statment->select()
+				->table('goods as g')
+				->join('goods_color as gc','gc.id','=','g.id')
+				->get()
+		);
+
+	var_dump(
+		$statment->select()
+				->table('goods')
+				->groupBy('id')
+				->get()
+		);
+
+	var_dump(
+		$statment->select()
+				->table('goods')
+				->orderBy('id','desc')
+				->get()
 		);

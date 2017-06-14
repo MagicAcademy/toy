@@ -52,7 +52,15 @@
 
 		public function bind($methodName,Closure $initFunction){
 			$this->sqlMethod[$methodName] = $initFunction($this->connect);
+		}
 
+		protected function defaultMethod(){
+			$this->bind('select',function($connect){
+				return function($args)use($connect){
+					$select = new Select($connect);
+					return $select->select($args);
+				};
+			});
 		}
 
 		public function __call($name,$args = []){
