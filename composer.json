@@ -1,0 +1,10 @@
+{
+	"name":"toy",
+	"author":"neetdai",
+	"autoload":{
+		"psr-4":{
+			"container\\":"vendor/container/",
+			"orm\\":"vendor/orm/"
+		}
+	}
+}
