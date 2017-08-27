@@ -1,13 +1,7 @@
 <?php
 	
-	// namespace test\IOC;
-
-	// require '../../vendor/class_load/ClassLoader.php';
-
-	require '../vendor/container/IOC.php';
-	require '../vendor/container/IOCException.php';
-	use vendor\container\IOC;
-	use vendor\container\IOCException;
+	require '../vendor/autoload.php';
+	use container\IOC;
 
 	interface A{
 
@@ -39,20 +33,25 @@
 		echo 'hello world';
 	}
 
-	IOC::bind('A',B::class);
-	IOC::bind('C',C::class);
-	IOC::make('C');
+	$ioc = IOC::getInstance();
+	$ioc2 = clone $ioc;
+
+	var_dump($ioc2 === $ioc,$ioc,$ioc2);
+
+	$ioc->bind('A',B::class);
+	$ioc->bind('C',C::class);
+	$ioc->make('C');
 
 
-	IOC::bind('test1',function(){
+	$ioc->bind('test1',function(){
 		echo 'test1';
 	});
-	IOC::make('test1');
+	$ioc->make('test1');
 
-	IOC::setSingle('D',D::class);
-	$d = IOC::make('D');
+	$ioc->setSingle('D',D::class);
+	$d = $ioc->make('D');
 	$d->d = 123;
-	$d = IOC::make('D');
+	$d = $ioc->make('D');
 	var_dump($d->d);
 
 	// warn
