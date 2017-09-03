@@ -30,9 +30,9 @@ class Statement
 
     protected function initWhere()
     {
-    	if (!($this->where instanceof Where)) {
-    		$this->where = new Where();
-    	}
+        if (!($this->where instanceof Where)) {
+            $this->where = new Where();
+        }
     }
 
     public function table(string $tableName)
@@ -43,21 +43,21 @@ class Statement
 
     public function where()
     {
-    	$this->initWhere();
-    	$this->where->appendWhere(Statement::TYPE['and'],func_get_args());
-    	return $this;
+        $this->initWhere();
+        $this->where->appendWhere(Where::$TYPE['and'],func_get_args());
+        return $this;
     }
 
     public function orWhere()
     {
-    	$this->initWhere();
-    	$this->where->appendWhere(Statement::TYPE['or'],func_get_args());
-    	return $this;
+        $this->initWhere();
+        $this->where->appendWhere(Where::$TYPE['or'],func_get_args());
+        return $this;
     }
 
     public function whereSelect(Closure $select)
     {
-    	$this->initWhere();
+        $this->initWhere();
 
     }
 
@@ -78,27 +78,28 @@ class Statement
 
     public function select()
     {
-    	$this->columns = array_merge($this->columns,func_get_args());
+        $this->columns = array_merge($this->columns,func_get_args());
     }
 
     protected function selectExecute()
     {
-    	$this->sql = 'select ';
-    	if (count($this->columns) === 0) {
-    		$this->sql .= '*';
-    	} else {
-    		$this->sql .= implode(',', $this->columns)
-    	}
+        $this->sql = 'select';
+        if (count($this->columns) === 0) {
+            $this->sql .= ' * ';
+        } else {
+            $this->sql .= implode(',', $this->columns);
+        }
 
-    	$this->sql .= $this->tableName;
-    	list($sql,$params) = $this->where->parse();
-    	$this->sql .= $sql;
-    	$this->params = array_merge($this->params,$params);
+        $this->sql .= ' from ' . $this->tableName;
+        list($sql,$params) = $this->where->parse();
+        $this->sql .= ' where ' . ltrim(ltrim($sql,' and'),' or');
+        $this->params = array_merge($this->params,$params);
     }
 
     public function one()
     {
-    	$this->sql .= 'limit 1;';
-    	return $this->connect->execute($this->sql,$this->params);
+        $this->selectExecute();
+        $this->sql .= 'limit 1;';
+        return $this->connect->executeOne($this->sql,$this->params);
     }
 }

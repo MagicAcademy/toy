@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
     
 namespace orm;
 
@@ -11,6 +11,12 @@ use orm\Statement;
 
 class DB{
 
+    const INFO_OPTION = [
+        'last' => 1,
+        'first' => 2,
+        'all' => 3
+    ];
+
     public static $instance = null;
 
     protected $config = [];
@@ -20,6 +26,8 @@ class DB{
     protected $sqlMethod = [];
 
     protected $statement = null;
+
+    protected $queryInfo = [];
 
     public function __clone(){}
 
@@ -57,13 +65,46 @@ class DB{
 
     public function table(string $tableName)
     {
-    	$this->statement = new Statement($this);
-    	return $this->statement->table($tableName);
+        $this->statement = new Statement($this);
+        return $this->statement->table($tableName);
     }
 
-    public function execute(string $sql,array $params)
+    public function executeOne(string $sql,array $params)
     {
-    	// $statement = $this->connect->prepare($sql);
-    	var_dump($sql);
+        $statement = $this->execute($sql,$params);
+        return $statement->fetch();
+    }
+
+    public function executeAll(string $sql,array $params): array
+    {
+        $statement = $this->connect->prepare($sql);
+        return $statement->fetchAll();
+    }
+
+    protected function execute(string $sql,array $params): PDOStatement
+    {
+        $statement = $this->connect->prepare($sql);
+        $statement->execute($params);
+        $this->queryInfo[] = [
+                                'statement' => $sql,
+                                'params' => $params
+                            ];
+        return $statement;
+    }
+
+    public function queryInfoLog(int $type = self::INFO_OPTION['all'])
+    {
+        switch ($type) {
+            case self::INFO_OPTION['all']:
+                return $this->queryInfo;
+            case self::INFO_OPTION['last']:
+                if ($tmp = end(&($this->queryInfo)) !== false) {
+                    return $tmp;
+                }
+                return [];
+            
+            default:
+                throw new Exception($type . ' is error.please select DB::INFO_OPTION[\'all\'] or DB::INFO_OPTION[\'last\'] or DB::INFO_OPTION[\'first\']');
+        }
     }
 }

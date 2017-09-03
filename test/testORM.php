@@ -25,3 +25,12 @@
 			->where('id',1)
 			->one()
 		);
+
+	var_dump(
+		$statment->table('goods')
+				->where(function($where){
+					$where->where('id',1)
+						->orWhere('id',2);
+				})
+				->one()
+		);
