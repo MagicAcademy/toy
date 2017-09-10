@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace orm;
 
@@ -55,6 +55,13 @@ class Statement
         return $this;
     }
 
+    public function whereIn(string $cloumn,$params)
+    {
+        $this->initWhere();
+        $this->where->appendWhereIn(Where::$TYPE['and in'],$cloumn,$params);
+        return $this;
+    }
+
     public function whereSelect(Closure $select)
     {
         $this->initWhere();
@@ -81,7 +88,7 @@ class Statement
         $this->columns = array_merge($this->columns,func_get_args());
     }
 
-    protected function selectExecute()
+    protected function selectSqlStatement()
     {
         $this->sql = 'select';
         if (count($this->columns) === 0) {
@@ -96,10 +103,27 @@ class Statement
         $this->params = array_merge($this->params,$params);
     }
 
+    public function getSqlStatement(): string
+    {
+        return $this->sql;
+    }
+
+    public function getParams(): array
+    {
+        return $this->params;
+    }
+
     public function one()
     {
-        $this->selectExecute();
+        $this->selectSqlStatement();
         $this->sql .= 'limit 1;';
         return $this->connect->executeOne($this->sql,$this->params);
+    }
+
+    public function all()
+    {
+        $this->selectSqlStatement();
+        $this->sql .= ';';
+        return $this->connect->executeAll($this->sql,$this->params);
     }
 }
