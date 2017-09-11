@@ -8,6 +8,7 @@ use \PDOException;
 use \Closure;
 use orm\Select;
 use orm\Statement;
+use orm\dsn\MysqlDsn;
 
 class DB{
 
@@ -29,6 +30,8 @@ class DB{
 
     protected $queryInfo = [];
 
+    protected $dsn = [];
+
     public function __clone(){}
 
     public function __construct(){}
@@ -47,14 +50,16 @@ class DB{
             if ( isset($config['database']) ) {
                 $this->config = $config['database'];
 
-                $dsn = sprintf(
-                                '%s:dbname=%s;host=%s;port=%d;charset=%s',
-                                $this->config['type'],
-                                $this->config['dbname'],
-                                $this->config['host'],
-                                $this->config['port'],
-                                $this->config['charset']
-                            );
+                $this->dsn = [new MysqlDsn()];
+
+                $dsn = '';
+
+                foreach ($this->dsn as $connection) {
+                	$connection->setOption($this->config);
+                	if ($connection->is()) {
+                		$dsn = $connection->getDsn();
+                	}
+                }
 
                 $this->connect = new PDO($dsn,$this->config['username'],$this->config['password']);
             }
@@ -77,7 +82,8 @@ class DB{
 
     public function executeAll(string $sql,array $params): array
     {
-        $statement = $this->connect->prepare($sql);
+        $statement = $this->execute($sql,$params);
+        var_dump($statement);
         return $statement->fetchAll();
     }
 

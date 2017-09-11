@@ -1,8 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace orm;
 
 use \Closure;
+use orm\exception\DBStatementException;
+use orm\Statement;
 
 class Where
 {
@@ -48,7 +50,22 @@ class Where
         1 << 3 => 'or in'
     ];
 
-    public function appendWhere(string $type,array $args)
+    /**
+     * [appendWhere description]
+     * @AuthorHTL
+     * @DateTime  2017-09-10T18:01:17+0800
+     * @param     int                   $type 这里的type为and或者or
+     * @param     array                    $args 这个参数是按照数组的数量长度决定
+     *                                           where的参数的
+     *                                           长度为:
+     *                                               1. 代表传进来的是一个匿名函数,
+     *                                               函数的参数是一个Where类型的对象,
+     *                                               作用是表示 where (xx = 1 and XX = 2) 这种嵌套的sql语句
+     *                                               2. 代表 where('xx',1) =>  where xx = 1
+     *                                               3. 代表 where('xx','>',1) => where xx > 1
+     * @throws    DBStatementException     这里会因为$args的长度等于0,或者$args长度为1时,$args[0]的类型不为匿名函数而抛出异常
+     */
+    public function appendWhere(int $type,array $args)
     {
         $argsCount = count($args);
         $where = [];
@@ -86,26 +103,31 @@ class Where
         $this->wheres[] = $where;
     }
 
-    public function appendWhereIn(string $type,string $column,$params)
+    /**
+     * [appendWhereIn description]
+     * @AuthorHTL
+     * @DateTime  2017-09-10T18:48:08+0800
+     * @param     int                   $type   这里是and in 或者 or in
+     * @param     string                   $column 这个是字段名
+     * @param     array || Closure         $params 这里的可以为一个数组或者是一个匿名函数,
+     *                                             函数的参数类型为 Statement
+     * @throws    DBStatementException     这里会因为$params的类型不为数组或者匿名函数为抛出异常
+     */
+    public function appendWhereIn(int $type,string $column,$params)
     {
         $isClosure = $params instanceof Closure;
         $isArray = is_array($params);
-        if (!$isArray || !$isClosure) {
-            throw new Exception($params . 'should be a array or Closure');
+        if (!$isArray && !$isClosure) {
+            throw new DBStatementException($params . ' should be a array or Closure');
         }   
         $where = [
                     'type' => $type,
                     'column' => $column,
                     'isClosure' => $isClosure,
+                    'params' => $params
                     ];
 
-        if ($isArray) {
-            $this->params = array_merge($this->params,$params);
-        }
-        if ($isClosure) {
-            $where['isSpoce'] = true;
-            $where['where'] = $params($this);
-        }
+        $this->wheres[] = $where;
     }
 
     public function parse(): array
@@ -113,7 +135,7 @@ class Where
         foreach ($this->wheres as $where) {
             if ($where['type'] & (self::SPOCE['where'])) {
                 $this->parseWhere($where);
-            } elseif ($where['type'] & (self::$TYPE['and in'] | self::$TYPE['or in'])) {
+            } elseif ($where['type'] & (self::SPOCE['whereIn'])) {
                 $this->parseWhereIn($where);
             }
         }
@@ -121,7 +143,7 @@ class Where
         return [$this->whereStatement,$this->params];
     }
 
-    protected function parseWhere($where)
+    protected function parseWhere(array $where)
     {
         $this->whereStatement .= ' ' . self::MAP[$where['type']];
         if ($where['isClosure']) {
@@ -140,9 +162,20 @@ class Where
         }
     }
 
-    protected function parseWhereIn($where)
+    protected function parseWhereIn(array $where)
     {
-
+        $type = explode(' ', self::MAP[$where['type']], 2);
+        $this->whereStatement .= ' ' . $type[0] . $where['column'] . ' ' . $type[1] . ' (';
+        if ($where['isClosure']) {
+            $statement = new Statement();
+            $where['params']($statement);
+            $this->statement .= $statement->getSqlStatement();
+            $this->params = $this->array_merge($this->params,$statement->getParams());
+        } else {
+            $this->whereStatement .= implode(',', array_fill(0, count($where['params']), '?'));
+            $this->params = array_merge($this->params,$where['params']);
+        }
+        $this->whereStatement .= ') ';
     }
 
     public function __call($alias,$value)
