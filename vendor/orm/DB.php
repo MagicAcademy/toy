@@ -98,7 +98,7 @@ class DB{
             case self::INFO_OPTION['all']:
                 return $this->queryInfo;
             case self::INFO_OPTION['last']:
-                if ($tmp = end(&($this->queryInfo)) !== false) {
+                if ($tmp = end($this->queryInfo) !== false) {
                     return $tmp;
                 }
                 return [];
