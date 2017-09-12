@@ -29,8 +29,4 @@ class PgsqlDsn extends DsnAbstract implements DsnInterface
                         );
     }
 
-    public function is():bool
-    {
-        return strtolower(trim($this->option['type'])) === 'pgsql';
-    }
 }
