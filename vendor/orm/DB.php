@@ -9,6 +9,7 @@ use \Closure;
 use orm\Select;
 use orm\Statement;
 use orm\dsn\MysqlDsn;
+use orm\dsn\PgsqlDsn;
 
 class DB{
 
@@ -50,22 +51,25 @@ class DB{
             if ( isset($config['database']) ) {
                 $this->config = $config['database'];
 
-                $this->dsn = [new MysqlDsn()];
+                $this->dsn = [new MysqlDsn(),new PgsqlDsn()];
 
-                $dsn = '';
+                $this->dsn = $this->build($this->config['type']);
 
-                foreach ($this->dsn as $connection) {
-                	$connection->setOption($this->config);
-                	if ($connection->is()) {
-                		$dsn = $connection->getDsn();
-                	}
-                }
+                $this->dsn->setOption($this->config);
+
+                $dsn = $dsn->getDsn();
 
                 $this->connect = new PDO($dsn,$this->config['username'],$this->config['password']);
             }
         }
 
         return $this;
+    }
+
+    protected function build(string $name)
+    {
+        $dsn = 'orm\dsn\\' .ucfirst(strtolower(trim($name))) . 'Dsn';
+        return new $dsn();
     }
 
     public function table(string $tableName)
