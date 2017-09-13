@@ -8,13 +8,26 @@
 	$orm = DB::getInstance();
 
 
+
+	$statment = $orm->init([
+				'database' => [
+						'type' => 'mysql',
+						'host' => 'localhost',
+						'port' => 3306,
+						'username' => 'root',
+						'password' => '',
+						'dataBaseName' => 'shop',
+						'charset' => 'utf8'
+					]
+				]);
+
 	// $statment = $orm->init([
 	// 			'database' => [
-	// 					'type' => 'mysql',
+	// 					'type' => 'pgsql',
 	// 					'host' => 'localhost',
-	// 					'port' => 3306,
+	// 					'port' => 5432,
 	// 					'username' => 'root',
-	// 					'password' => '',
+	// 					'password' => '123456',
 	// 					'dataBaseName' => 'shop',
 	// 					'charset' => 'utf8'
 	// 				]
@@ -41,4 +54,19 @@
 				->all()
 		);
 
+
 	// var_dump($orm->queryInfoLog());
+
+	var_dump(
+		$statment->table('goods')
+				->whereIn('id',function($select){
+					$select->table('goods')
+							->select('id');
+				})
+				->all()
+		);
+
+	// var_dump(
+	// 	$orm->queryInfoLog()
+	// 	);
+

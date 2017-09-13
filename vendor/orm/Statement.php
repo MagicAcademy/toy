@@ -23,7 +23,7 @@ class Statement
 
     protected $params = [];
 
-    public function __construct(DB $connect)
+    public function setConnect(DB $connect)
     {
         $this->connect = $connect;
     }
@@ -55,22 +55,32 @@ class Statement
         return $this;
     }
 
-    public function whereIn(string $cloumn,$params)
+    public function whereIn(string $column,$params)
     {
         $this->initWhere();
-        $this->where->appendWhereIn(Where::$TYPE['and in'],$cloumn,$params);
+        $this->where->appendWhereIn(Where::$TYPE['and in'],$column,$params);
         return $this;
     }
 
-    public function whereSelect(Closure $select)
+    public function orWhereIn(string $column,$params)
     {
         $this->initWhere();
-
+        $this->where->appendWhereIn(Where::$TYPE['or in'],$column,$params);
+        return $this;
     }
 
-    public function orWhereSelect()
+    public function whereSelect(string $column,string $notation,Closure $select)
     {
+        $this->initWhere();
+        $this->whereSelect(Where::$TYPE['and select'],$column,$notation,$select);
+        return $this;
+    }
 
+    public function orWhereSelect(strint $column,string $notation,Closure $select)
+    {
+        $this->initWhere();
+        $this->whereSelect(Where::$TYPE['or select'],$column,$notation,$select);
+        return $this;
     }
 
     public function whereBeteewn()
@@ -94,22 +104,26 @@ class Statement
         if (count($this->columns) === 0) {
             $this->sql .= ' * ';
         } else {
-            $this->sql .= implode(',', $this->columns);
+            $this->sql .= ' ' . implode(',', $this->columns);
         }
 
         $this->sql .= ' from ' . $this->tableName;
-        list($sql,$params) = $this->where->parse();
-        $this->sql .= ' where ' . ltrim(ltrim($sql,' and'),' or');
-        $this->params = array_merge($this->params,$params);
+        if (!is_null($this->where)){
+            list($sql,$params) = $this->where->parse();
+            $this->sql .= ' where ' . ltrim(ltrim($sql,' and'),' or');
+            $this->params = array_merge($this->params,$params);
+        }
     }
 
     public function getSqlStatement(): string
     {
+        $this->selectSqlStatement();
         return $this->sql;
     }
 
     public function getParams(): array
     {
+        $this->selectSqlStatement();
         return $this->params;
     }
 

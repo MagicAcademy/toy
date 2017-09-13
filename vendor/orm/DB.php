@@ -8,7 +8,6 @@ use \PDOException;
 use \Closure;
 use orm\Select;
 use orm\Statement;
-use orm\dsn\MysqlDsn;
 
 class DB{
 
@@ -50,16 +49,11 @@ class DB{
             if ( isset($config['database']) ) {
                 $this->config = $config['database'];
 
-                $this->dsn = [new MysqlDsn()];
+                $this->dsn = $this->build($this->config['type']);
 
-                $dsn = '';
+                $this->dsn->setOption($this->config);
 
-                foreach ($this->dsn as $connection) {
-                	$connection->setOption($this->config);
-                	if ($connection->is()) {
-                		$dsn = $connection->getDsn();
-                	}
-                }
+                $dsn = $this->dsn->getDsn();
 
                 $this->connect = new PDO($dsn,$this->config['username'],$this->config['password']);
             }
@@ -68,9 +62,16 @@ class DB{
         return $this;
     }
 
+    protected function build(string $name)
+    {
+        $dsn = 'orm\dsn\\' .ucfirst(strtolower(trim($name)));
+        return new $dsn();
+    }
+
     public function table(string $tableName)
     {
-        $this->statement = new Statement($this);
+        $this->statement = new Statement();
+        $this->statement->setConnect($this);
         return $this->statement->table($tableName);
     }
 
@@ -83,8 +84,7 @@ class DB{
     public function executeAll(string $sql,array $params): array
     {
         $statement = $this->execute($sql,$params);
-        var_dump($statement);
-        return $statement->fetchAll();
+        return $statement->fetchAll(PDO::FETCH_CLASS,'stdclass');
     }
 
     protected function execute(string $sql,array $params): PDOStatement

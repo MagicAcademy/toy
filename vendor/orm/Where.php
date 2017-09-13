@@ -5,6 +5,7 @@ namespace orm;
 use \Closure;
 use orm\exception\DBStatementException;
 use orm\Statement;
+use orm\DB;
 
 class Where
 {
@@ -35,19 +36,24 @@ class Where
         'and' => 1 << 0,
         'or' => 1 << 1,
         'and in' => 1 << 2,
-        'or in' => 1 << 3
+        'or in' => 1 << 3,
+        'and select' => 1 << 4,
+        'or select' => 1 << 5
     ];
 
     const SPOCE = [
         'where' => 1 | 2,
-        'whereIn' => 3 | 4
+        'whereIn' => 4 | 8,
+        'whereSelect' => 16 | 32
     ];
 
     const MAP = [
         1 << 0 => 'and',
         1 << 1 => 'or',
         1 << 2 => 'and in',
-        1 << 3 => 'or in'
+        1 << 3 => 'or in',
+        1 << 4 => 'and select',
+        1 << 5 => 'or select'
     ];
 
     /**
@@ -84,7 +90,7 @@ class Where
             $where = [
                         'isClosure' => false,
                         'column' => $args[0],
-                        'sign' => '=',
+                        'notation' => '=',
                         'params' => $args[1]
                         ];
 
@@ -95,7 +101,7 @@ class Where
             $where = [
                         'isClosure' => false,
                         'column' => $args[0],
-                        'sign' => $args[1],
+                        'notation' => $args[1],
                         'params' => $args[2]
                         ];
         }
@@ -130,13 +136,28 @@ class Where
         $this->wheres[] = $where;
     }
 
+    public function appendWhereSelect(int $type,string $column,string $notation,Closure $select)
+    {
+        if (!in_array($notation, self::ALLOW_SIGN)) {
+            throw new DBStatementException($notation . ' not a legal notation of sql statement');
+        }
+        $this->wheres[] = [
+            'type' => $type,
+            'column' => $column,
+            'notation' => $notation,
+            'select' => $select
+        ];
+    }
+
     public function parse(): array
     {
         foreach ($this->wheres as $where) {
-            if ($where['type'] & (self::SPOCE['where'])) {
+            if ($where['type'] & self::SPOCE['where']) {
                 $this->parseWhere($where);
-            } elseif ($where['type'] & (self::SPOCE['whereIn'])) {
+            } elseif ($where['type'] & self::SPOCE['whereIn']) {
                 $this->parseWhereIn($where);
+            } elseif ($where['type'] & self::SPOCE['whereSelect']) {
+                $this->parseWhereSelect($where);
             }
         }
 
@@ -156,7 +177,7 @@ class Where
             $this->whereStatement .= ' )';
         } else {
             $this->whereStatement .= ' ' . $where['column'];
-            $this->whereStatement .= ' ' . $where['sign'];
+            $this->whereStatement .= ' ' . $where['notation'];
             $this->whereStatement .= ' ' . '?';
             $this->params[] = $where['params'];
         }
@@ -169,12 +190,26 @@ class Where
         if ($where['isClosure']) {
             $statement = new Statement();
             $where['params']($statement);
-            $this->statement .= $statement->getSqlStatement();
-            $this->params = $this->array_merge($this->params,$statement->getParams());
+
+            $this->whereStatement .= $statement->getSqlStatement();
+            $this->params = array_merge($this->params,$statement->getParams());
         } else {
             $this->whereStatement .= implode(',', array_fill(0, count($where['params']), '?'));
             $this->params = array_merge($this->params,$where['params']);
         }
+        $this->whereStatement .= ') ';
+    }
+
+    protected function parseWhereSelect(array $where)
+    {
+        $type = explode(' ', self::MAP[$where['type']], 2);
+        $this->whereStatement .= ' ' . $type[0] . $where['column'] . ' ' . $where['notation'] . ' (';
+        
+        $statement = new Statement();
+        $where['select']($statement);
+        $this->whereStatement .= $statement->getSqlStatement();
+        $this->params = array_merge($this->params,$statement->getParams());
+
         $this->whereStatement .= ') ';
     }
 
