@@ -34,3 +34,22 @@
 				})
 				->one()
 		);
+
+	var_dump(
+		$statment->table('goods')
+				->whereIn('id',[1,2])
+				->all()
+		);
+
+	var_dump(
+		$statment->table('goods')
+				->whereIn('id',function($select){
+					$select->table('goods')
+							->select('id');
+				})
+				->all()
+		);
+
+	// var_dump(
+	// 	$orm->queryInfoLog()
+	// 	);

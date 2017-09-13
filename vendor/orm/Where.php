@@ -5,6 +5,7 @@ namespace orm;
 use \Closure;
 use orm\exception\DBStatementException;
 use orm\Statement;
+use orm\DB;
 
 class Where
 {
@@ -169,8 +170,9 @@ class Where
         if ($where['isClosure']) {
             $statement = new Statement();
             $where['params']($statement);
-            $this->statement .= $statement->getSqlStatement();
-            $this->params = $this->array_merge($this->params,$statement->getParams());
+
+            $this->whereStatement .= $statement->getSqlStatement();
+            $this->params = array_merge($this->params,$statement->getParams());
         } else {
             $this->whereStatement .= implode(',', array_fill(0, count($where['params']), '?'));
             $this->params = array_merge($this->params,$where['params']);

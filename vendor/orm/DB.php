@@ -70,7 +70,8 @@ class DB{
 
     public function table(string $tableName)
     {
-        $this->statement = new Statement($this);
+        $this->statement = new Statement();
+        $this->statement->setConnect($this);
         return $this->statement->table($tableName);
     }
 
@@ -83,8 +84,7 @@ class DB{
     public function executeAll(string $sql,array $params): array
     {
         $statement = $this->execute($sql,$params);
-        var_dump($statement);
-        return $statement->fetchAll();
+        return $statement->fetchAll(PDO::FETCH_CLASS,'stdclass');
     }
 
     protected function execute(string $sql,array $params): PDOStatement

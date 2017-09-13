@@ -23,7 +23,7 @@ class Statement
 
     protected $params = [];
 
-    public function __construct(DB $connect)
+    public function setConnect(DB $connect)
     {
         $this->connect = $connect;
     }
@@ -62,6 +62,13 @@ class Statement
         return $this;
     }
 
+    public function orWhereIn(string $cloumn,$params)
+    {
+        $this->initWhere();
+        $this->where->appendWhereIn(Where::$TYPE['or in'],$cloumn,$params);
+        return $this;
+    }
+
     public function whereSelect(Closure $select)
     {
         $this->initWhere();
@@ -94,22 +101,26 @@ class Statement
         if (count($this->columns) === 0) {
             $this->sql .= ' * ';
         } else {
-            $this->sql .= implode(',', $this->columns);
+            $this->sql .= ' ' . implode(',', $this->columns);
         }
 
         $this->sql .= ' from ' . $this->tableName;
-        list($sql,$params) = $this->where->parse();
-        $this->sql .= ' where ' . ltrim(ltrim($sql,' and'),' or');
-        $this->params = array_merge($this->params,$params);
+        if (!is_null($this->where)){
+            list($sql,$params) = $this->where->parse();
+            $this->sql .= ' where ' . ltrim(ltrim($sql,' and'),' or');
+            $this->params = array_merge($this->params,$params);
+        }
     }
 
     public function getSqlStatement(): string
     {
+        $this->selectSqlStatement();
         return $this->sql;
     }
 
     public function getParams(): array
     {
+        $this->selectSqlStatement();
         return $this->params;
     }
 
