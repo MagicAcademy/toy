@@ -6,7 +6,7 @@ use orm\dsn\DsnInterface;
 use orm\dsn\DsnAbstract;
 use orm\dsn\DsnTrait;
 
-class PgsqlDsn extends DsnAbstract implements DsnInterface
+class Mysql extends DsnAbstract implements DsnInterface
 {
     use DsnTrait;
 
@@ -21,12 +21,13 @@ class PgsqlDsn extends DsnAbstract implements DsnInterface
     public function getDsn():string
     {
         return sprintf(
-                        '%s:dbname=%s host=%s port=%d ',
+                        '%s:dbname=%s;host=%s;port=%d;charset=%s',
                         $this->option['type'],
                         $this->option['dataBaseName'],
                         $this->option['host'],
-                        $this->option['port']
-                        );
+                        $this->option['port'],
+                        $this->option['charset']
+                    );
     }
 
 }

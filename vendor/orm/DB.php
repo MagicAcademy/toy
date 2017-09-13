@@ -8,8 +8,6 @@ use \PDOException;
 use \Closure;
 use orm\Select;
 use orm\Statement;
-use orm\dsn\MysqlDsn;
-use orm\dsn\PgsqlDsn;
 
 class DB{
 
@@ -51,13 +49,11 @@ class DB{
             if ( isset($config['database']) ) {
                 $this->config = $config['database'];
 
-                $this->dsn = [new MysqlDsn(),new PgsqlDsn()];
-
                 $this->dsn = $this->build($this->config['type']);
 
                 $this->dsn->setOption($this->config);
 
-                $dsn = $dsn->getDsn();
+                $dsn = $this->dsn->getDsn();
 
                 $this->connect = new PDO($dsn,$this->config['username'],$this->config['password']);
             }
@@ -68,7 +64,7 @@ class DB{
 
     protected function build(string $name)
     {
-        $dsn = 'orm\dsn\\' .ucfirst(strtolower(trim($name))) . 'Dsn';
+        $dsn = 'orm\dsn\\' .ucfirst(strtolower(trim($name)));
         return new $dsn();
     }
 
