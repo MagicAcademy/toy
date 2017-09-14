@@ -83,17 +83,17 @@ class Statement
         return $this;
     }
 
-    public function whereBeteewn(string $column,array $beteewn)
+    public function whereBetween(string $column,array $between)
     {
         $this->initWhere();
-        $this->where->appendWhereBetween();
+        $this->where->appendWhereBetween(Where::$TYPE['and between'],$column,$between);
         return $this;
     }
 
-    public function orWhereBeteewn(string $column,array $beteewn)
+    public function orWhereBetween(string $column,array $between)
     {
         $this->initWhere();
-        $this->where->appendWhereBetween();
+        $this->where->appendWhereBetween(Where::$TYPE['or between'],$column,$between);
         return $this;
     }
 

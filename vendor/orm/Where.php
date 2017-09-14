@@ -38,13 +38,16 @@ class Where
         'and in' => 1 << 2,
         'or in' => 1 << 3,
         'and select' => 1 << 4,
-        'or select' => 1 << 5
+        'or select' => 1 << 5,
+        'and between' => 1 << 6,
+        'or between' => 1 << 7
     ];
 
     const SPOCE = [
         'where' => 1 | 2,
         'whereIn' => 4 | 8,
-        'whereSelect' => 16 | 32
+        'whereSelect' => 16 | 32,
+        'whereBetween' => 64 | 128
     ];
 
     const MAP = [
@@ -53,7 +56,9 @@ class Where
         1 << 2 => 'and in',
         1 << 3 => 'or in',
         1 << 4 => 'and select',
-        1 << 5 => 'or select'
+        1 << 5 => 'or select',
+        1 << 6 => 'and between',
+        1 << 7 => 'or between'
     ];
 
     /**
@@ -149,9 +154,16 @@ class Where
         ];
     }
 
-    public function appendWhereBetween()
+    public function appendWhereBetween(int $type,string $column,array $params)
     {
-        
+        if (count($params) < 2) {
+            throw new DBStatementException("the length of third params should be greater than one");
+        }
+        $this->wheres[] = [
+            'type' => $type,
+            'column' => $column,
+            'params' => array_slice($params, 0, 2)
+        ];
     }
 
     public function parse(): array
@@ -163,6 +175,8 @@ class Where
                 $this->parseWhereIn($where);
             } elseif ($where['type'] & self::SPOCE['whereSelect']) {
                 $this->parseWhereSelect($where);
+            } elseif ($where['type'] & self::SPOCE['whereBetween']) {
+                $this->parseWhereBetween($where);
             }
         }
 
@@ -209,7 +223,7 @@ class Where
     protected function parseWhereSelect(array $where)
     {
         $type = explode(' ', self::MAP[$where['type']], 2);
-        $this->whereStatement .= ' ' . $type[0] . ' ' . $where['column'] . ' ' . $where['notation'] . ' (';
+        $this->whereStatement .= ' ' . $type[0] . ' ' . $where['column'] . ' ' . $where['notation'] . ' ( ';
         
         $statement = new Statement();
         $where['select']($statement);
@@ -218,6 +232,18 @@ class Where
         $this->params = array_merge($this->params,$statement->getParams());
 
         $this->whereStatement .= ') ';
+    }
+
+    protected function parseWhereBetween(array $where)
+    {
+        $type = explode(' ', self::MAP[$where['type']], 2);
+        $this->whereStatement .= sprintf(
+                                            ' %s %s between ? and ? ',
+                                            $type[0],
+                                            $where['column']
+                                        );
+
+        $this->params = array_merge($this->params,$where['params']);
     }
 
     public function __call($alias,$value)
