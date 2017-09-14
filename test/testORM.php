@@ -9,29 +9,29 @@
 
 
 
-	$statment = $orm->init([
-				'database' => [
-						'type' => 'mysql',
-						'host' => 'localhost',
-						'port' => 3306,
-						'username' => 'root',
-						'password' => '',
-						'dataBaseName' => 'shop',
-						'charset' => 'utf8'
-					]
-				]);
-
 	// $statment = $orm->init([
 	// 			'database' => [
-	// 					'type' => 'pgsql',
+	// 					'type' => 'mysql',
 	// 					'host' => 'localhost',
-	// 					'port' => 5432,
+	// 					'port' => 3306,
 	// 					'username' => 'root',
-	// 					'password' => '123456',
+	// 					'password' => '',
 	// 					'dataBaseName' => 'shop',
 	// 					'charset' => 'utf8'
 	// 				]
 	// 			]);
+
+	$statment = $orm->init([
+				'database' => [
+						'type' => 'pgsql',
+						'host' => 'localhost',
+						'port' => 5432,
+						'username' => 'root',
+						'password' => '123456',
+						'dataBaseName' => 'shop',
+						'charset' => 'utf8'
+					]
+				]);
 	
 	var_dump(
 		$statment->table('goods')
@@ -57,16 +57,36 @@
 
 	// var_dump($orm->queryInfoLog());
 
+	// var_dump(
+	// 	$statment->table('goods')
+	// 			->whereIn('id',function($select){
+	// 				$select->table('goods')
+	// 						->select('id');
+	// 			})
+	// 			->all()
+	// 	);
+
 	var_dump(
 		$statment->table('goods')
-				->whereIn('id',function($select){
+				->where('product_name','')
+				->orWhereIn('id',function($select){
 					$select->table('goods')
+							->where('id',1);
+				})
+				->all()
+	);
+
+	var_dump(
+		$statment->table('goods')
+				->whereSelect('id','>',function($select){
+					$select->table('goods')
+							->where('id',1)
 							->select('id');
 				})
 				->all()
-		);
+	);
 
-	// var_dump(
-	// 	$orm->queryInfoLog()
-	// 	);
+	var_dump(
+		$orm->queryInfoLog()
+		);
 

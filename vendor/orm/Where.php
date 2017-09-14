@@ -149,6 +149,11 @@ class Where
         ];
     }
 
+    public function appendWhereBetween()
+    {
+        
+    }
+
     public function parse(): array
     {
         foreach ($this->wheres as $where) {
@@ -186,11 +191,12 @@ class Where
     protected function parseWhereIn(array $where)
     {
         $type = explode(' ', self::MAP[$where['type']], 2);
-        $this->whereStatement .= ' ' . $type[0] . $where['column'] . ' ' . $type[1] . ' (';
+        $this->whereStatement .= ' ' . $type[0] . ' ' . $where['column'] . ' ' . $type[1] . ' (';
         if ($where['isClosure']) {
             $statement = new Statement();
             $where['params']($statement);
 
+            $statement->execSelectSqlStatement();
             $this->whereStatement .= $statement->getSqlStatement();
             $this->params = array_merge($this->params,$statement->getParams());
         } else {
@@ -203,10 +209,11 @@ class Where
     protected function parseWhereSelect(array $where)
     {
         $type = explode(' ', self::MAP[$where['type']], 2);
-        $this->whereStatement .= ' ' . $type[0] . $where['column'] . ' ' . $where['notation'] . ' (';
+        $this->whereStatement .= ' ' . $type[0] . ' ' . $where['column'] . ' ' . $where['notation'] . ' (';
         
         $statement = new Statement();
         $where['select']($statement);
+        $statement->execSelectSqlStatement();
         $this->whereStatement .= $statement->getSqlStatement();
         $this->params = array_merge($this->params,$statement->getParams());
 

@@ -72,25 +72,29 @@ class Statement
     public function whereSelect(string $column,string $notation,Closure $select)
     {
         $this->initWhere();
-        $this->whereSelect(Where::$TYPE['and select'],$column,$notation,$select);
+        $this->where->appendWhereSelect(Where::$TYPE['and select'],$column,$notation,$select);
         return $this;
     }
 
     public function orWhereSelect(strint $column,string $notation,Closure $select)
     {
         $this->initWhere();
-        $this->whereSelect(Where::$TYPE['or select'],$column,$notation,$select);
+        $this->where->appendWhereSelect(Where::$TYPE['or select'],$column,$notation,$select);
         return $this;
     }
 
-    public function whereBeteewn()
+    public function whereBeteewn(string $column,array $beteewn)
     {
-
+        $this->initWhere();
+        $this->where->appendWhereBetween();
+        return $this;
     }
 
-    public function orWhereBeteewn()
+    public function orWhereBeteewn(string $column,array $beteewn)
     {
-
+        $this->initWhere();
+        $this->where->appendWhereBetween();
+        return $this;
     }
 
     public function select()
@@ -98,7 +102,7 @@ class Statement
         $this->columns = array_merge($this->columns,func_get_args());
     }
 
-    protected function selectSqlStatement()
+    public function execSelectSqlStatement()
     {
         $this->sql = 'select';
         if (count($this->columns) === 0) {
@@ -117,26 +121,24 @@ class Statement
 
     public function getSqlStatement(): string
     {
-        $this->selectSqlStatement();
         return $this->sql;
     }
 
     public function getParams(): array
     {
-        $this->selectSqlStatement();
         return $this->params;
     }
 
     public function one()
     {
-        $this->selectSqlStatement();
+        $this->execSelectSqlStatement();
         $this->sql .= 'limit 1;';
         return $this->connect->executeOne($this->sql,$this->params);
     }
 
     public function all()
     {
-        $this->selectSqlStatement();
+        $this->execSelectSqlStatement();
         $this->sql .= ';';
         return $this->connect->executeAll($this->sql,$this->params);
     }
