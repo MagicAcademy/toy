@@ -23,6 +23,11 @@ class Statement
 
     protected $params = [];
 
+    /**
+     * 
+     **/
+    protected $needExcute = true;
+
     public function setConnect(DB $connect)
     {
         $this->connect = $connect;
@@ -95,6 +100,11 @@ class Statement
         $this->initWhere();
         $this->where->appendWhereBetween(Where::$TYPE['or between'],$column,$between);
         return $this;
+    }
+
+    public function join()
+    {
+
     }
 
     public function select()

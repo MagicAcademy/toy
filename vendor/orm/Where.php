@@ -5,7 +5,6 @@ namespace orm;
 use \Closure;
 use orm\exception\DBStatementException;
 use orm\Statement;
-use orm\DB;
 use \ReflectionMethod;
 use \ReflectionParameter;
 
