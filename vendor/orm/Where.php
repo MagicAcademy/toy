@@ -6,6 +6,8 @@ use \Closure;
 use orm\exception\DBStatementException;
 use orm\Statement;
 use orm\DB;
+use \ReflectionMethod;
+use \ReflectionParameter;
 
 class Where
 {
@@ -246,14 +248,16 @@ class Where
         $this->params = array_merge($this->params,$where['params']);
     }
 
-    public function __call($alias,$value)
+    public function __call($alias,$values)
     {
         $name = '';
         $type = substr($alias, 0, 2);
         if (strtolower($type) !== 'or') {
             $type = trim('and ' . strtolower(explode('where', lcfirst($alias), 2)[1]));
         } else {
-            $type = join(' ',explode('Where', $alias, 2));
+            $type = join(' ',array_map(function($value){
+                return strtolower($value);
+            },explode('Where', $alias, 2)));
         }
         
         $split = explode('or', $alias, 2);
@@ -264,7 +268,16 @@ class Where
         }
         
         if (method_exists($this, $fn)) {
-            $this->$fn(self::$TYPE[trim($type)],$value);
+            $reflect = new ReflectionMethod(__class__,$fn);
+            $number = $reflect->getNumberOfParameters();
+
+
+            if ($number > 2) {
+                array_unshift($values, self::$TYPE[trim($type)]);
+                $reflect->invokeArgs($this,$values);
+            } else {
+                $reflect->invoke($this,self::$TYPE[trim($type)],$values);
+            }
         } else {
             throw new Exception($alias . '  is not found');
         }
