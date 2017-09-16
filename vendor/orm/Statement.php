@@ -5,6 +5,7 @@ namespace orm;
 use orm\DB;
 use orm\Where;
 use \Closure;
+use orm\Join;
 
 class Statement
 {
@@ -13,7 +14,7 @@ class Statement
 
     protected $tableName = '';
 
-    protected $join = [];
+    protected $join = null;
 
     protected $where = null;
 
@@ -24,15 +25,36 @@ class Statement
     protected $params = [];
 
     /**
-     * 
+     * 是否需要执行sql语句
      **/
-    protected $needExcute = true;
+    protected $whetherExcute = true;
 
+    /**
+     * 这个方法的作用是在使用子查询语句中使用all或者get等生成sql语句,防止重复合并参数
+     * @AuthorHTL
+     * @DateTime  2017-09-15T22:15:19+0800
+     */
+    public function preventExcute()
+    {
+        $this->whetherExcute = false;
+    }
+
+    /**
+     * 设置连接
+     * @AuthorHTL
+     * @DateTime  2017-09-15T23:28:48+0800
+     * @param     DB                       $connect [description]
+     */
     public function setConnect(DB $connect)
     {
         $this->connect = $connect;
     }
 
+    /**
+     * 创建一个Where对象
+     * @AuthorHTL
+     * @DateTime  2017-09-15T23:40:34+0800
+     */
     protected function initWhere()
     {
         if (!($this->where instanceof Where)) {
@@ -40,12 +62,53 @@ class Statement
         }
     }
 
-    public function table(string $tableName)
+    /**
+     * 创建一个Join对象
+     * @AuthorHTL
+     * @DateTime  2017-09-15T23:49:37+0800
+     */
+    protected function initJoin()
+    {
+        if (!($this->join instanceof Join)) {
+            $this->join = new Join();
+        }
+    }
+
+    /**
+     * 设置table
+     * @AuthorHTL
+     * @DateTime  2017-09-15T23:43:05+0800
+     * @param     string                   $tableName [description]
+     * @return    [type]                              [description]
+     */
+    public function table(string $tableName): Statement
     {
         $this->tableName = $tableName;
         return $this;
     }
 
+    /**
+     * where语句
+     * 这个where方法的参数是可变长度的
+     * 
+     * 当长度为0时,抛出异常
+     * @throws DBStatementException param count must be large than 0
+     * 
+     * 当长度为1时,参数应该为回调函数,函数的参数类型为Where,使用方法为
+     *
+     *      $select->where(function(Where $where){
+     *          $where->where('column',value)
+     *                  ->orWhere('column',value)
+     *      })
+     * 
+     * 回调函数中的Where会调用调用跟Select相同名称的方法
+     * 当传进来的不是一个回调函数时,会抛出异常
+     * @throws DBStatementException param must be a Closure type when param count is 1
+     * 
+     * @AuthorHTL
+     * @DateTime  2017-09-15T23:51:35+0800
+     * @return    [type]                   [description]
+     */
     public function where()
     {
         $this->initWhere();
@@ -141,15 +204,19 @@ class Statement
 
     public function one()
     {
-        $this->execSelectSqlStatement();
-        $this->sql .= 'limit 1;';
-        return $this->connect->executeOne($this->sql,$this->params);
+        if ($this->whetherExcute) {
+            $this->execSelectSqlStatement();
+            $this->sql .= 'limit 1;';
+            return $this->connect->executeOne($this->sql,$this->params);
+        }
     }
 
     public function all()
     {
-        $this->execSelectSqlStatement();
-        $this->sql .= ';';
-        return $this->connect->executeAll($this->sql,$this->params);
+        if ($this->whetherExcute) {
+            $this->execSelectSqlStatement();
+            $this->sql .= ';';
+            return $this->connect->executeAll($this->sql,$this->params);
+        }
     }
 }

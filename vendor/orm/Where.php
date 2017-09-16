@@ -67,25 +67,24 @@ class Where
      * @AuthorHTL
      * @DateTime  2017-09-10T18:01:17+0800
      * @param     int                   $type 这里的type为and或者or
-     * @param     array                    $args 这个参数是按照数组的数量长度决定
-     *                                           where的参数的
-     *                                           长度为:
-     *                                               1. 代表传进来的是一个匿名函数,
+     * @param     array                 $args 这个参数是按照数组的数量长度决定where的参数的
+     *                                        长度为:
+     *                                               1. 代表传进来的是一个回调函数,
      *                                               函数的参数是一个Where类型的对象,
      *                                               作用是表示 where (xx = 1 and XX = 2) 这种嵌套的sql语句
      *                                               2. 代表 where('xx',1) =>  where xx = 1
      *                                               3. 代表 where('xx','>',1) => where xx > 1
-     * @throws    DBStatementException     这里会因为$args的长度等于0,或者$args长度为1时,$args[0]的类型不为匿名函数而抛出异常
+     * @throws    DBStatementException     这里会因为$args的长度等于0,或者$args长度为1时,$args[0]的类型不为回调函数而抛出异常
      */
     public function appendWhere(int $type,array $args)
     {
         $argsCount = count($args);
         $where = [];
         if ($argsCount < 1) {
-            throw new Exception('param count must be large than 0');
+            throw new DBStatementException('param count must be large than 0');
         } elseif ($argsCount === 1) {
             if (!($args[0] instanceof Closure)) {
-                throw new Exception('param must be a Closure type when param count is 1');
+                throw new DBStatementException('param must be a Closure type when param count is 1');
             }
 
             $where = [
@@ -102,7 +101,7 @@ class Where
 
         } elseif ($argsCount >= 3) {
             if (!in_array(self::ALLOW_SIGN,$args[1])) {
-                throw new Exception($args[1] . ' isn\'t allow to used');
+                throw new DBStatementException($args[1] . ' isn\'t allow to used');
             }
             $where = [
                         'isClosure' => false,
@@ -121,9 +120,9 @@ class Where
      * @DateTime  2017-09-10T18:48:08+0800
      * @param     int                   $type   这里是and in 或者 or in
      * @param     string                   $column 这个是字段名
-     * @param     array || Closure         $params 这里的可以为一个数组或者是一个匿名函数,
+     * @param     array || Closure         $params 这里的可以为一个数组或者是一个回调函数,
      *                                             函数的参数类型为 Statement
-     * @throws    DBStatementException     这里会因为$params的类型不为数组或者匿名函数为抛出异常
+     * @throws    DBStatementException     这里会因为$params的类型不为数组或者回调函数为抛出异常
      */
     public function appendWhereIn(int $type,string $column,$params)
     {
@@ -211,7 +210,7 @@ class Where
             $statement = new Statement();
             $where['params']($statement);
 
-            $statement->execSelectSqlStatement();
+            $statement->preventExcute();
             $this->whereStatement .= $statement->getSqlStatement();
             $this->params = array_merge($this->params,$statement->getParams());
         } else {
@@ -227,6 +226,7 @@ class Where
         $this->whereStatement .= ' ' . $type[0] . ' ' . $where['column'] . ' ' . $where['notation'] . ' ( ';
         
         $statement = new Statement();
+        $statement->preventExcute();
         $where['select']($statement);
         $statement->execSelectSqlStatement();
         $this->whereStatement .= $statement->getSqlStatement();
