@@ -75,16 +75,22 @@ class DB{
         return $this->statement->table($tableName);
     }
 
+    public function executeColumn(string $sql,array $params,int $column_number = 0)
+    {
+        $statement = $this->execute($sql,$params);
+        return $statement->fetchColumn($column_number);
+    }
+
     public function executeOne(string $sql,array $params)
     {
         $statement = $this->execute($sql,$params);
-        return $statement->fetch();
+        return $statement->fetch(PDO::FETCH_ASSOC);
     }
 
     public function executeAll(string $sql,array $params): array
     {
         $statement = $this->execute($sql,$params);
-        return $statement->fetchAll(PDO::FETCH_CLASS,'stdclass');
+        return $statement->fetchAll(PDO::FETCH_CLASS);
     }
 
     protected function execute(string $sql,array $params): PDOStatement
