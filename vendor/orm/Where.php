@@ -92,6 +92,9 @@ class Where
                         'closure' => $args[0]
                         ];
         } elseif ($argsCount === 2) {
+            if (!is_string($args[0])) {
+                throw new DBStatementException("column must be a string type");
+            }
             $where = [
                         'isClosure' => false,
                         'column' => $args[0],
@@ -100,6 +103,9 @@ class Where
                         ];
 
         } elseif ($argsCount >= 3) {
+            if (!is_string($args[0])) {
+                throw new DBStatementException("column must be a string type");
+            }
             if (!in_array(self::ALLOW_SIGN,$args[1])) {
                 throw new DBStatementException($args[1] . ' isn\'t allow to used');
             }
