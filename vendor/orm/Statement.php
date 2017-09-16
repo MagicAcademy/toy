@@ -97,77 +97,113 @@ class Statement
      * 当长度为1时,参数应该为回调函数,函数的参数类型为Where,使用方法为
      *
      *      $select->where(function(Where $where){
-     *          $where->where('column',value)
-     *                  ->orWhere('column',value)
+     *          $where->where('column',1)
+     *                  ->orWhere('column',2)
      *      })
+     * 相当于sql语句中的
+     *     where ( column = 1 or column = 2 )
      * 
      * 回调函数中的Where会调用调用跟Select相同名称的方法
      * 当传进来的不是一个回调函数时,会抛出异常
      * @throws DBStatementException param must be a Closure type when param count is 1
+     *
+     * 当长度为2时,其作用与sql语句作用相同
+     *
+     *      where column = 'xxx' => where('column','xxx')
+     * 
+     * 第一个参数应为字符串的字段,否则会抛出异常
+     * @throws DBStatementException column must be a string type
+     *
+     * 当长度超过或等于3时,第一个参数为字符串的字段名,第二个参数为字符串的sql符号,第三个为sql语句的参数
+     *
+     *      where column > 1 => where('column','>',1)
+     *
+     * 第一个参数应为字符串类型,否则会抛出异常
+     * @throws DBStatement param must be a Closure type when param count is 1
+     * 第二个参数应为sql符号,否则会抛出异常
+     * @throws  DBStatement 
+     *
+     * 注意,多个where或者orWhere同时使用效果为
+     *
+     *      where('column',1)->orWhere('column',2)->where('type',1) => where column = 1 or column = 2 and type = 1
      * 
      * @AuthorHTL
      * @DateTime  2017-09-15T23:51:35+0800
      * @return    [type]                   [description]
      */
-    public function where()
+    public function where(): Statement
     {
         $this->initWhere();
         $this->where->appendWhere(Where::$TYPE['and'],func_get_args());
         return $this;
     }
 
-    public function orWhere()
+    public function orWhere(): Statement
     {
         $this->initWhere();
         $this->where->appendWhere(Where::$TYPE['or'],func_get_args());
         return $this;
     }
 
-    public function whereIn(string $column,$params)
+    public function whereIn(string $column,$params): Statement
     {
         $this->initWhere();
         $this->where->appendWhereIn(Where::$TYPE['and in'],$column,$params);
         return $this;
     }
 
-    public function orWhereIn(string $column,$params)
+    public function orWhereIn(string $column,$params): Statement
     {
         $this->initWhere();
         $this->where->appendWhereIn(Where::$TYPE['or in'],$column,$params);
         return $this;
     }
 
-    public function whereSelect(string $column,string $notation,Closure $select)
+    public function whereSelect(string $column,string $notation,Closure $select): Statement
     {
         $this->initWhere();
         $this->where->appendWhereSelect(Where::$TYPE['and select'],$column,$notation,$select);
         return $this;
     }
 
-    public function orWhereSelect(strint $column,string $notation,Closure $select)
+    public function orWhereSelect(strint $column,string $notation,Closure $select): Statement
     {
         $this->initWhere();
         $this->where->appendWhereSelect(Where::$TYPE['or select'],$column,$notation,$select);
         return $this;
     }
 
-    public function whereBetween(string $column,array $between)
+    public function whereBetween(string $column,array $between): Statement
     {
         $this->initWhere();
         $this->where->appendWhereBetween(Where::$TYPE['and between'],$column,$between);
         return $this;
     }
 
-    public function orWhereBetween(string $column,array $between)
+    public function orWhereBetween(string $column,array $between): Statement
     {
         $this->initWhere();
         $this->where->appendWhereBetween(Where::$TYPE['or between'],$column,$between);
         return $this;
     }
 
-    public function join()
+    public function join(string $table,$condition): Statement
     {
+        $this->initJoin();
+        $this->join->appendJoin(Join::$TYPE['join'],$table,$condition);
+        return $this;
+    }
 
+    public function leftJoin(string $table,$condition): Statement
+    {
+        $this->initJoin();
+        $this->join->appendJoin(Join::$TYPE['left join'],$table,$condition);
+    }
+
+    public function rightJoin(string $table,$condition): Statement
+    {
+        $this->initJoin();
+        $this->join->appendJoin(Join::$TYPE['right join'],$table,$condition);
     }
 
     public function select()
@@ -184,8 +220,14 @@ class Statement
             $this->sql .= ' ' . implode(',', $this->columns);
         }
 
+
         $this->sql .= ' from ' . $this->tableName;
-        if (!is_null($this->where)){
+
+        if (!is_null($this->join)) {
+            $this->sql .= ' ' . trim($this->join->parse());
+        }
+
+        if (!is_null($this->where)) {
             list($sql,$params) = $this->where->parse();
             $this->sql .= ' where ' . ltrim(ltrim($sql,' and'),' or');
             $this->params = array_merge($this->params,$params);
@@ -200,6 +242,15 @@ class Statement
     public function getParams(): array
     {
         return $this->params;
+    }
+
+    public function count(string $column = '*',bool $isDistinct = false)
+    {
+        if ($this->whetherExcute) {
+            $this->columns = ['count( ' . ($isDistinct?'distinct ':'') . $column . ' )'];
+            $this->execSelectSqlStatement();
+            return $this->connect->executeColumn($this->sql,$this->params,0);
+        }
     }
 
     public function one()
