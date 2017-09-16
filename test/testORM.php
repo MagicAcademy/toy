@@ -92,9 +92,6 @@
 					->all()
 	);
 
-	/**
-	 * @bugs
-	 */
 	var_dump(
 		$statment->table('goods')
 				->where(function($where){
@@ -109,7 +106,31 @@
 				->all()
 	);
 
-	// var_dump(
-	// 	$orm->queryInfoLog()
-	// 	);
+	var_dump(
+		$statment->table('goods as g')
+				->join('goods_color as gc','g.id = gc.id')
+				->all()
+	);
+
+	var_dump(
+		$statment->table('goods as g')
+				->join('goods_color as gc',function($join){
+					$join->and('g.id = gc.id');
+				})
+				->all()
+	);
+
+	var_dump(
+		$statment->table('goods')
+				->count()
+	);
+
+	var_dump(
+		$statment->table('goods')
+				->count('id',true)
+	);
+
+	var_dump(
+		$orm->queryInfoLog()
+		);
 
