@@ -104,6 +104,12 @@ class DB{
         return $statement;
     }
 
+    public function executeInsert(string $sql,array $params)
+    {
+        $statement = $this->execute($sql,$params);
+        return $statement->lastInsertId();
+    }
+
     public function queryInfoLog(int $type = self::INFO_OPTION['all'])
     {
         switch ($type) {

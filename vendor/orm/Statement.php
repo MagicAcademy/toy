@@ -187,6 +187,14 @@ class Statement
         return $this;
     }
 
+    /**
+     * [join description]
+     * @AuthorHTL
+     * @DateTime  2017-09-16T17:52:43+0800
+     * @param     string                   $table     [description]
+     * @param     [type]                   $condition [description]
+     * @return    [type]                              [description]
+     */
     public function join(string $table,$condition): Statement
     {
         $this->initJoin();
@@ -211,6 +219,58 @@ class Statement
         $this->columns = array_merge($this->columns,func_get_args());
     }
 
+    public function insert($insertValue)
+    {
+        $isArray = false;
+        $isClosure = false;
+        if ( ($isArray = is_array($insertValue)) === false && ($isClosure = ($insertValue instanceof Closure)) === false ) {
+            throw new DBStatement('argument type must be a Array or Closure');
+        }
+        
+        $this->compileInsertTable();
+
+        if ($isArray) {
+            
+        }
+
+        if ($isClosure) {
+            $this->compileInsertSelect($insertValue);
+        }
+
+        return $this->connect->
+    }
+
+    protected function compileInsertTable()
+    {
+        $this->sql = sprintf("insert into %s ",$this->tableName);
+    }
+
+    protected function compileInsertSelect(Closure $insertValue)
+    {
+        $select = new static();
+        $select->preventExcute();
+        $insertValue($select);
+
+        $select->compileStatement();
+        $this->sql .= $select->getSqlStatement();
+        $this->params = array_merge($this->params,$select->getParams());
+    }
+
+    public function update()
+    {
+
+    }
+
+    public function delete()
+    {
+
+    }
+
+    /**
+     * 拼接select语句
+     * @AuthorHTL
+     * @DateTime  2017-09-16T17:51:54+0800
+     */
     public function execSelectSqlStatement()
     {
         $this->sql = 'select';
@@ -219,14 +279,37 @@ class Statement
         } else {
             $this->sql .= ' ' . implode(',', $this->columns);
         }
+        $this->compileStatement();
+    }
 
-
+    protected function compileTable()
+    {
         $this->sql .= ' from ' . $this->tableName;
+    }
 
+    /**
+     * 拼接sql语句
+     * @AuthorHTL
+     * @DateTime  2017-09-16T18:00:25+0800
+     * @return    [type]                   [description]
+     */
+    protected function compileStatement()
+    {
+        $this->compileTable();
+        $this->compileJoin();
+        $this->compileWhere();
+
+    }
+
+    protected function compileJoin()
+    {
         if (!is_null($this->join)) {
             $this->sql .= ' ' . trim($this->join->parse());
         }
+    }
 
+    protected function compileWhere()
+    {
         if (!is_null($this->where)) {
             list($sql,$params) = $this->where->parse();
             $this->sql .= ' where ' . ltrim(ltrim($sql,' and'),' or');
