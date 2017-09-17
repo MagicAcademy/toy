@@ -130,7 +130,8 @@
 				->count('id',true)
 	);
 
-	var_dump(
-		$orm->queryInfoLog()
-		);
+	
+	// var_dump(
+	// 	$orm->queryInfoLog()
+	// 	);
 
