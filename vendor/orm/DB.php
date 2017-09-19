@@ -106,8 +106,15 @@ class DB{
 
     public function executeInsert(string $sql,array $params)
     {
-        $statement = $this->execute($sql,$params);
-        return $statement->lastInsertId();
+        try {
+            $this->connect->beginTransaction();
+            $statement = $this->execute($sql,$params);
+            $this->connect->commit();
+            return $this->connect->lastInsertId();
+        } catch(PDOException $e) {
+            $this->connect->rollback();
+            throw $e;
+        }
     }
 
     public function queryInfoLog(int $type = self::INFO_OPTION['all'])

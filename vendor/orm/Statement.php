@@ -6,6 +6,7 @@ use orm\DB;
 use orm\Where;
 use \Closure;
 use orm\Join;
+use orm\exception\DBStatementException;
 
 class Statement
 {
@@ -230,19 +231,59 @@ class Statement
         $this->compileInsertTable();
 
         if ($isArray) {
-            
+            $this->compileInsertArray($insertValue);
         }
 
         if ($isClosure) {
             $this->compileInsertSelect($insertValue);
         }
 
-        return $this->connect->
+        return $this->connect->executeInsert($this->sql,$this->params);
     }
 
     protected function compileInsertTable()
     {
         $this->sql = sprintf("insert into %s ",$this->tableName);
+    }
+
+    protected function compileInsertArray(array $insertValue)
+    {
+        if (count($insertValue) === count($insertValue,COUNT_RECURSIVE))
+        {
+            $this->sql .= sprintf(
+                                    '(%s) values (%s)',
+                                    trim(implode(',', array_keys($insertValue))),
+                                    trim(implode(',',array_fill(0, count($insertValue), '?')))
+                                );
+
+            $this->params = array_merge($this->params,array_values($insertValue));
+        } else {
+            $keys = [];
+            $values = [];
+            $columns = '';
+
+            foreach ($insertValue as $key => $value) {
+                if (!is_array($value)) {
+                    throw new DBStatementException("insert value must be array type and column => value");
+                }
+
+                $keys = array_unique(array_merge(array_keys($value)));
+                $columns .= sprintf(
+                                    ' (%s) ',
+                                    rtrim(implode(',', array_fill(0, count($value), '?')),',')
+                                    );
+
+                $values = array_merge($values,$value);
+            }
+
+            $this->sql .= sprintf(
+                                    ' %s values %s',
+                                    rtrim(implode(',', $keys),','),
+                                    $columns
+                                );
+
+            $this->params = array_merge($this->params,$values);
+        }
     }
 
     protected function compileInsertSelect(Closure $insertValue)
