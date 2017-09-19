@@ -220,6 +220,13 @@ class Statement
         $this->columns = array_merge($this->columns,func_get_args());
     }
 
+    /**
+     * 插入语句
+     * @AuthorHTL
+     * @DateTime  2017-09-19T22:05:39+0800
+     * @param     array|Closure                   $insertValue [description]
+     * @return    [type]                                [description]
+     */
     public function insert($insertValue)
     {
         $isArray = false;
@@ -297,11 +304,54 @@ class Statement
         $this->params = array_merge($this->params,$select->getParams());
     }
 
-    public function update()
+    /**
+     * [update description]
+     * @AuthorHTL
+     * @DateTime  2017-09-19T22:07:05+0800
+     * @return    [type]                   [description]
+     */
+    public function update($updateValue)
     {
+        $isArray = is_array($updateValue);
+        $isClosure = $updateValue instanceof Closure;
 
+        if ($isArray) {
+            if (count($updateValue) === count($updateValue,COUNT_RECURSIVE)) {
+                $this->compileUpdateTable();
+            } else {
+                throw new DBStatementException('');
+            }
+        } elseif ($isClosure) {
+            $statement = new static();
+            $statement->preventExcute();
+            $updateValue($statement);
+            $statement->execSelectSqlStatement();
+
+            $this->compileUpdateTable();
+
+            $this->sql .= $statement->getSqlStatement();
+            $this->params = array_merge($this->params,$statement->getParams());
+
+
+        } else {
+            throw new DBStatementException('argument type should be array or closure');
+        }
     }
 
+    protected function compileUpdateTable()
+    {
+        $this->sql = sprintf(
+                                'update %s set ',
+                                $this->tableName
+                            );
+    }
+
+    /**
+     * [delete description]
+     * @AuthorHTL
+     * @DateTime  2017-09-19T22:07:10+0800
+     * @return    [type]                   [description]
+     */
     public function delete()
     {
 
