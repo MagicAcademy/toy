@@ -318,8 +318,10 @@ class Statement
         if ($isArray) {
             if (count($updateValue) === count($updateValue,COUNT_RECURSIVE)) {
                 $this->compileUpdateTable();
+                $this->compileWhere();
+
             } else {
-                throw new DBStatementException('');
+                throw new DBStatementException('argument should be type a one depth of array');
             }
         } elseif ($isClosure) {
             $statement = new static();
@@ -354,7 +356,16 @@ class Statement
      */
     public function delete()
     {
+        $this->compileDeleteTable();
+        $this->compileWhere();
+    }
 
+    protected function compileDeleteTable()
+    {
+        $this->sql = sprintf(
+                                'delete from %s ',
+                                $this->tableName
+                            );
     }
 
     /**
@@ -373,7 +384,7 @@ class Statement
         $this->compileStatement();
     }
 
-    protected function compileTable()
+    protected function compileSelectTable()
     {
         $this->sql .= ' from ' . $this->tableName;
     }
@@ -386,7 +397,7 @@ class Statement
      */
     protected function compileStatement()
     {
-        $this->compileTable();
+        $this->compileSelectTable();
         $this->compileJoin();
         $this->compileWhere();
 
