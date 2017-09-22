@@ -245,7 +245,7 @@ class Statement
             $this->compileInsertSelect($insertValue);
         }
 
-        return $this->connect->executeInsert($this->sql,$this->params);
+        return $this->connect->executeInsertGetId($this->sql,$this->params);
     }
 
     protected function compileInsertTable()
@@ -280,7 +280,7 @@ class Statement
                                     rtrim(implode(',', array_fill(0, count($value), '?')),',')
                                     );
 
-                $values = array_merge($values,$value);
+                $values = array_merge($values,array_values($value));
             }
 
             $this->sql .= sprintf(
@@ -320,6 +320,7 @@ class Statement
                 $this->compileUpdateTable();
                 $this->compileWhere();
 
+                return $this->connect->executeAction($this->sql,$this->params);
             } else {
                 throw new DBStatementException('argument should be type a one depth of array');
             }
@@ -334,7 +335,7 @@ class Statement
             $this->sql .= $statement->getSqlStatement();
             $this->params = array_merge($this->params,$statement->getParams());
 
-
+            return $this->connect->executeAction($this->sql,$this->params);
         } else {
             throw new DBStatementException('argument type should be array or closure');
         }
@@ -358,6 +359,8 @@ class Statement
     {
         $this->compileDeleteTable();
         $this->compileWhere();
+
+        return $this->connect->executeAction($this->sql,$this->params);
     }
 
     protected function compileDeleteTable()

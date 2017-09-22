@@ -154,6 +154,12 @@
 	);
 
 	var_dump(
-		$orm->queryInfoLog()
-		);
+		$statment->table('goods')
+				->where('id',4)
+				->delete()
+	);
+
+	// var_dump(
+	// 	$orm->queryInfoLog()
+	// 	);
 

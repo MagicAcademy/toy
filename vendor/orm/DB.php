@@ -104,17 +104,22 @@ class DB{
         return $statement;
     }
 
-    public function executeInsert(string $sql,array $params)
+    public function executeAction(string $sql,array $params)
     {
-        try {
-            $this->connect->beginTransaction();
+        // try {
+            // $this->connect->beginTransaction();
             $statement = $this->execute($sql,$params);
-            $this->connect->commit();
-            return $this->connect->lastInsertId();
-        } catch(PDOException $e) {
-            $this->connect->rollback();
-            throw $e;
-        }
+            return $statement->fetch();
+            // $this->connect->commit();
+        // } catch(PDOException $e) {
+        //     $this->connect->rollback();
+        //     throw $e;
+        // }
+    }
+
+    public function executeInsertGetId(string $sql,array $params)
+    {
+        return $this->executeAction($sql,$params);
     }
 
     public function queryInfoLog(int $type = self::INFO_OPTION['all'])
