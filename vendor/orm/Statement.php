@@ -25,6 +25,8 @@ class Statement
 
     protected $params = [];
 
+    protected $orders = [];
+
     protected $groups = [];
 
     /**
@@ -219,9 +221,15 @@ class Statement
         return $this;
     }
 
-    public function groupBy(string $column,string $sort = 'asc'): self
+    public function orderBy(string $column,string $sort = 'asc'): self
     {
-        $this->groups[] = ['column' => $column,'sort' => $sort];
+        $this->orders[] = ['column' => $column,'sort' => $sort];
+        return $this;
+    }
+
+    public function groupBy(string $column): self
+    {
+        $this->groups[] = $column;
         return $this;
     }
 
@@ -464,14 +472,22 @@ class Statement
         }
     }
 
-    protected function compileGroupBy()
+    protected function compileOrderBy()
     {
-        if (count($this->groups) > 0) {
-            $statement = 'group by ';
-            foreach ($this->groups as $group) {
+        if (count($this->orders) > 0) {
+            $statement = 'order by ';
+            foreach ($this->orders as $group) {
                 $statement .= $group['column'] . ' ' . $group['sort'] . ', ';
             }
             $this->sql .= rtrim($statement,', ');
+        }
+    }
+
+    protected function compileGroupBy()
+    {
+        if (count($this->groups) > 0) {
+            $statement = 'group by ' . implode(',', $this->groups);
+            $this->sql .= rtrim($statement,',') . ' ';
         }
     }
 
@@ -498,7 +514,7 @@ class Statement
     {
         if ($this->whetherExcute) {
             $this->execSelectSqlStatement();
-            $this->sql .= 'limit 1;';
+            $this->sql = trim($this->sql) . ' limit 1;';
             return $this->connect->executeOne($this->sql,$this->params);
         }
     }
