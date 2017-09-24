@@ -8,6 +8,7 @@ use \PDOException;
 use \Closure;
 use orm\Select;
 use orm\Statement;
+use orm\dsn\DsnInterface;
 
 class DB{
 
@@ -43,7 +44,7 @@ class DB{
         return self::$instance;
     }
 
-    public function init($config = [])
+    public function init($config = []): self
     {
         if ( is_null($this->connect) ) {
             if ( isset($config['database']) ) {
@@ -62,13 +63,13 @@ class DB{
         return $this;
     }
 
-    protected function build(string $name)
+    protected function build(string $name): DsnInterface
     {
         $dsn = 'orm\dsn\\' .ucfirst(strtolower(trim($name)));
         return new $dsn();
     }
 
-    public function table(string $tableName)
+    public function table(string $tableName): Statement
     {
         $this->statement = new Statement();
         $this->statement->setConnect($this);
@@ -104,22 +105,25 @@ class DB{
         return $statement;
     }
 
-    public function executeAction(string $sql,array $params)
+    public function executeAction(string $sql,array $params): int
     {
-        // try {
-            // $this->connect->beginTransaction();
-            $statement = $this->execute($sql,$params);
-            return $statement->fetch();
-            // $this->connect->commit();
-        // } catch(PDOException $e) {
-        //     $this->connect->rollback();
-        //     throw $e;
-        // }
+        $statement = $this->execute($sql,$params);
+        return $statement->rowCount();
     }
 
     public function executeInsertGetId(string $sql,array $params)
     {
-        return $this->executeAction($sql,$params);
+        try {
+            $this->connect->beginTransaction();
+            $rowTotal = $this->executeAction($sql,$params);
+            $this->connect->commit();
+
+            if ($rowTotal > 0) {
+                return $this->connect->lastInsertId();
+            }
+        } catch (PDOExecption $e) {
+            $this->connect->rollback();
+        }
     }
 
     public function queryInfoLog(int $type = self::INFO_OPTION['all'])
@@ -128,7 +132,7 @@ class DB{
             case self::INFO_OPTION['all']:
                 return $this->queryInfo;
             case self::INFO_OPTION['last']:
-                if ($tmp = end($this->queryInfo) !== false) {
+                if (($tmp = end($this->queryInfo)) !== false) {
                     return $tmp;
                 }
                 return [];
