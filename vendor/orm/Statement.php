@@ -25,6 +25,8 @@ class Statement
 
     protected $params = [];
 
+    protected $groups = [];
+
     /**
      * 是否需要执行sql语句
      **/
@@ -82,7 +84,7 @@ class Statement
      * @param     string                   $tableName [description]
      * @return    [type]                              [description]
      */
-    public function table(string $tableName): Statement
+    public function table(string $tableName): self
     {
         $this->tableName = $tableName;
         return $this;
@@ -132,56 +134,56 @@ class Statement
      * @DateTime  2017-09-15T23:51:35+0800
      * @return    [type]                   [description]
      */
-    public function where(): Statement
+    public function where(): self
     {
         $this->initWhere();
         $this->where->appendWhere(Where::$TYPE['and'],func_get_args());
         return $this;
     }
 
-    public function orWhere(): Statement
+    public function orWhere(): self
     {
         $this->initWhere();
         $this->where->appendWhere(Where::$TYPE['or'],func_get_args());
         return $this;
     }
 
-    public function whereIn(string $column,$params): Statement
+    public function whereIn(string $column,$params): self
     {
         $this->initWhere();
         $this->where->appendWhereIn(Where::$TYPE['and in'],$column,$params);
         return $this;
     }
 
-    public function orWhereIn(string $column,$params): Statement
+    public function orWhereIn(string $column,$params): self
     {
         $this->initWhere();
         $this->where->appendWhereIn(Where::$TYPE['or in'],$column,$params);
         return $this;
     }
 
-    public function whereSelect(string $column,string $notation,Closure $select): Statement
+    public function whereSelect(string $column,string $notation,Closure $select): self
     {
         $this->initWhere();
         $this->where->appendWhereSelect(Where::$TYPE['and select'],$column,$notation,$select);
         return $this;
     }
 
-    public function orWhereSelect(strint $column,string $notation,Closure $select): Statement
+    public function orWhereSelect(strint $column,string $notation,Closure $select): self
     {
         $this->initWhere();
         $this->where->appendWhereSelect(Where::$TYPE['or select'],$column,$notation,$select);
         return $this;
     }
 
-    public function whereBetween(string $column,array $between): Statement
+    public function whereBetween(string $column,array $between): self
     {
         $this->initWhere();
         $this->where->appendWhereBetween(Where::$TYPE['and between'],$column,$between);
         return $this;
     }
 
-    public function orWhereBetween(string $column,array $between): Statement
+    public function orWhereBetween(string $column,array $between): self
     {
         $this->initWhere();
         $this->where->appendWhereBetween(Where::$TYPE['or between'],$column,$between);
@@ -196,32 +198,47 @@ class Statement
      * @param     [type]                   $condition [description]
      * @return    [type]                              [description]
      */
-    public function join(string $table,$condition): Statement
+    public function join(string $table,$condition): self
     {
         $this->initJoin();
         $this->join->appendJoin(Join::$TYPE['join'],$table,$condition);
         return $this;
     }
 
-    public function leftJoin(string $table,$condition): Statement
+    public function leftJoin(string $table,$condition): self
     {
         $this->initJoin();
         $this->join->appendJoin(Join::$TYPE['left join'],$table,$condition);
+        return $this;
     }
 
-    public function rightJoin(string $table,$condition): Statement
+    public function rightJoin(string $table,$condition): self
     {
         $this->initJoin();
         $this->join->appendJoin(Join::$TYPE['right join'],$table,$condition);
+        return $this;
     }
 
-    public function select()
+    public function groupBy(string $column,string $sort = 'asc'): self
+    {
+        $this->groups[] = ['column' => $column,'sort' => $sort];
+        return $this;
+    }
+
+    public function select(): self
     {
         $this->columns = array_merge($this->columns,func_get_args());
+        return $this;
     }
 
     /**
      * 插入语句
+     *
+     * 参数有两种
+     * 1. 数组,支持批量插入       @compileInsertArray
+     * 2. 匿名函数,支持子语句插入 @compileInsertSelect
+     *
+     * 
      * @AuthorHTL
      * @DateTime  2017-09-19T22:05:39+0800
      * @param     array|Closure                   $insertValue [description]
@@ -245,7 +262,7 @@ class Statement
             $this->compileInsertSelect($insertValue);
         }
 
-        return $this->connect->executeInsertGetId($this->sql,$this->params);
+        return $this->connect->executeAction($this->sql,$this->params);
     }
 
     protected function compileInsertTable()
@@ -253,12 +270,25 @@ class Statement
         $this->sql = sprintf("insert into %s ",$this->tableName);
     }
 
+    /**
+     * 使用数组来插入表
+     *
+     * 这里有两种方式插入表
+     * 1. 以键对值的字典方式插入,以键为插入的目标
+     * 2. 以二维数组的方式插入,数组中包裹着字典
+     * @AuthorHTL
+     * @DateTime  2017-09-23T11:57:48+0800
+     * @param     array                    $insertValue [description]
+     * @return    [type]                                [description]
+     *
+     * @throws DBStatementException        insert value must be array type and column => value
+     */
     protected function compileInsertArray(array $insertValue)
     {
         if (count($insertValue) === count($insertValue,COUNT_RECURSIVE))
         {
             $this->sql .= sprintf(
-                                    '(%s) values (%s)',
+                                    '(%s) values (%s);',
                                     trim(implode(',', array_keys($insertValue))),
                                     trim(implode(',',array_fill(0, count($insertValue), '?')))
                                 );
@@ -276,7 +306,7 @@ class Statement
 
                 $keys = array_unique(array_merge(array_keys($value)));
                 $columns .= sprintf(
-                                    ' (%s) ',
+                                    '(%s),',
                                     rtrim(implode(',', array_fill(0, count($value), '?')),',')
                                     );
 
@@ -284,10 +314,12 @@ class Statement
             }
 
             $this->sql .= sprintf(
-                                    ' %s values %s',
+                                    '(%s) values %s',
                                     rtrim(implode(',', $keys),','),
                                     $columns
                                 );
+
+            $this->sql = rtrim($this->sql,',') . ';';
 
             $this->params = array_merge($this->params,$values);
         }
@@ -305,7 +337,12 @@ class Statement
     }
 
     /**
-     * [update description]
+     * 修改语句
+     *
+     * 有两种参数
+     * 1. 数组
+     * 2. 匿名函数
+     * 
      * @AuthorHTL
      * @DateTime  2017-09-19T22:07:05+0800
      * @return    [type]                   [description]
@@ -350,7 +387,12 @@ class Statement
     }
 
     /**
-     * [delete description]
+     * 删除语句
+     *
+     * 有两种参数
+     * 1. 数组
+     * 2. 匿名函数
+     * 
      * @AuthorHTL
      * @DateTime  2017-09-19T22:07:10+0800
      * @return    [type]                   [description]
@@ -403,7 +445,7 @@ class Statement
         $this->compileSelectTable();
         $this->compileJoin();
         $this->compileWhere();
-
+        $this->compileGroupBy();
     }
 
     protected function compileJoin()
@@ -419,6 +461,17 @@ class Statement
             list($sql,$params) = $this->where->parse();
             $this->sql .= ' where ' . ltrim(ltrim($sql,' and'),' or');
             $this->params = array_merge($this->params,$params);
+        }
+    }
+
+    protected function compileGroupBy()
+    {
+        if (count($this->groups) > 0) {
+            $statement = 'group by ';
+            foreach ($this->groups as $group) {
+                $statement .= $group['column'] . ' ' . $group['sort'] . ', ';
+            }
+            $this->sql .= rtrim($statement,', ');
         }
     }
 
