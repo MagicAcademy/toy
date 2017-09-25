@@ -19,25 +19,28 @@ class ORM{
 
     protected $columns = [];
 
-    public function __construct(DB $connect)
+    protected $relations = [];
+
+    protected $isLazy = false;
+
+    public function __construct()
+    {
+        $this->setTable();
+    }
+
+    public function setDB(DB $connect)
     {
         $this->connect = $connect;
+    }
+
+    protected function setTable()
+    {
         $this->tableName = strtolower(static::class);
     }
 
-    protected function table(): string
+    public function getTable(): string
     {
         return $this->tableName;
-    }
-
-    protected function prefix(): string
-    {
-        return '';
-    }
-
-    protected function getTable()
-    {
-        $this->tableName = $this->prefix() . $this->table();
     }
 
     public function find()
@@ -77,19 +80,24 @@ class ORM{
         
     }
 
-    protected function belongTo(string $anotherORMName,array $condition,string $alias = '')
+    protected function belongTo(ORM $anotherORM,array $condition,string $alias = '')
+    {
+        $this->relations[]
+    }
+
+    protected function hasMany(ORM $anotherORM,array $condition,string $alias = '')
     {
 
     }
 
-    protected function hasMany(string $anotherORMName,array $condition,string $alias = '')
+    protected function hasOne(ORM $anotherORM,array $condition,string $alias = '')
     {
 
     }
 
-    protected function hasOne(string $anotherORMName,array $condition,string $alias = '')
+    public function lazyRelation()
     {
-
+        $this->isLazy = true;
     }
 
     public function __set(string $name,$value)
