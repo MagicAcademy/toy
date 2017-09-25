@@ -82,7 +82,10 @@ class ORM{
 
     protected function belongTo(ORM $anotherORM,array $condition,string $alias = '')
     {
-        $this->relations[]
+        $this->relations[$anotherORM::class] = [
+            'condition' => $condition,
+            'alias' => $alias
+        ]
     }
 
     protected function hasMany(ORM $anotherORM,array $condition,string $alias = '')

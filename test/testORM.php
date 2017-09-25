@@ -7,8 +7,25 @@ use orm\ORM;
 
 class Goods extends ORM
 {
+    protected $alias = 'g';
 
+    public function hasOneGoodsColor()
+    {
+        $this->hasOne(new GoodsColor(),['and' => ['g.id = gc.id']]);
+    }
 }
+
+
+class GoodsColor extends ORM
+{
+    protected $alias = 'gc';
+
+    public function belongToGoods()
+    {
+        $this->belongTo(new Goods(),['and' => ['g.id = gc.id']]);
+    }
+}
+
 
 $orm = DB::getInstance();
 // $statment = $orm->init([
