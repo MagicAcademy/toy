@@ -4,6 +4,8 @@ namespace orm;
 
 use orm\DB;
 use orm\Statement;
+use \ReflectionClass;
+use orm\exception\ORMException;
 
 class ORM{
 
@@ -43,6 +45,11 @@ class ORM{
         return $this->tableName;
     }
 
+    public function getAlias(): string
+    {
+        return $this->alias;
+    }
+
     public function find()
     {
         $this->getTable();
@@ -80,22 +87,11 @@ class ORM{
         
     }
 
-    protected function belongTo(ORM $anotherORM,array $condition,string $alias = '')
+    protected function belongTo(string $anotherORMName,array $columns)
     {
-        $this->relations[$anotherORM::class] = [
-            'condition' => $condition,
-            'alias' => $alias
-        ]
-    }
-
-    protected function hasMany(ORM $anotherORM,array $condition,string $alias = '')
-    {
-
-    }
-
-    protected function hasOne(ORM $anotherORM,array $condition,string $alias = '')
-    {
-
+        $this->relations[$anotherORMName] = [
+            'columns' => $columns
+        ];
     }
 
     public function lazyRelation()
@@ -106,5 +102,16 @@ class ORM{
     public function __set(string $name,$value)
     {
         $this->columns[$name] = $value;
+    }
+
+    public function __call(string $name,array $args)
+    {
+        if ( ($position = $strpos($name,'has',0)) !== 0 ) {
+            throw new ORMException();
+        }
+
+        $relationClassName = substr('string', 0, 3);
+        $reflectionClass = new ReflectionClass($relationClass);
+        $reflectionMethod = $reflectionClass->getMethod('belongTo' . static::class);
     }
 }

@@ -11,7 +11,7 @@ class Goods extends ORM
 
     public function hasOneGoodsColor()
     {
-        $this->hasOne(new GoodsColor(),['and' => ['g.id = gc.id']]);
+        $this->hasOne(new GoodsColor(),['and' => ['g.id']]);
     }
 }
 
@@ -22,7 +22,7 @@ class GoodsColor extends ORM
 
     public function belongToGoods()
     {
-        $this->belongTo(new Goods(),['and' => ['g.id = gc.id']]);
+        $this->belongTo(new Goods(),['and' => ['gc.id']]);
     }
 }
 
