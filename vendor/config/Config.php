@@ -1,91 +1,91 @@
 <?php
-	
-	namespace vendor\config;
 
-	use \ArrayAccess;
-	use \FilesystemIterator;
+namespace vendor\config;
 
-	/**
-	 * 这个类没有做遍历文件树的功能,所以那些配置文件都只写在app/config目录里面,
-	 * 不做目录树分类
-	 */
-	class Config  implements ArrayAccess{
-		
-		private $container = [];
- 
-		private $rootPath = '';
+use \ArrayAccess;
+use \FilesystemIterator;
 
-		public function __construct($path = ''){
-			if( file_exists($path) && is_dir($path) ){
-				$this->rootPath = rtrim($path,'/').'/';
+/**
+ * 这个类没有做遍历文件树的功能,所以那些配置文件都只写在app/config目录里面,
+ * 不做目录树分类
+ */
+class Config  implements ArrayAccess{
+    
+    private $container = [];
 
-				$this->dirIter($this->rootPath);
-				
-			}
-		}
+    private $rootPath = '';
 
-		/**
-		 * 这个方法是遍历$path的目录下的PHP文件
-		 * 并且会将PHP文件里面的东西以 [文件名] => 文件内的数组 形式存放到$this->container里面,使用深度优先的递归
-		 * 
-		 * @AuthorHTL neetdai
-		 * @DateTime  2017-05-26T16:00:26+0800
-		 */
-		private function dirIter($dir = ''){
-			$dir = rtrim($dir,'/') . '/';
-			$od = opendir($dir);
+    public function __construct($path = ''){
+        if( file_exists($path) && is_dir($path) ){
+            $this->rootPath = rtrim($path,'/').'/';
 
-			while( ($path = readdir($od)) !== false ){
-				if($path === '.' || $path === '..')continue;
+            $this->dirIter($this->rootPath);
+            
+        }
+    }
 
-				$realPath = $dir . $path;
+    /**
+     * 这个方法是遍历$path的目录下的PHP文件
+     * 并且会将PHP文件里面的东西以 [文件名] => 文件内的数组 形式存放到$this->container里面,使用深度优先的递归
+     * 
+     * @AuthorHTL neetdai
+     * @DateTime  2017-05-26T16:00:26+0800
+     */
+    private function dirIter($dir = ''){
+        $dir = rtrim($dir,'/') . '/';
+        $od = opendir($dir);
 
-				if( is_dir($realPath) ){
+        while( ($path = readdir($od)) !== false ){
+            if($path === '.' || $path === '..')continue;
 
-					$this->dirIter($realPath);
-				}else{
-					$pathinfo = pathinfo($path);
+            $realPath = $dir . $path;
 
-					if( is_file($realPath) && $pathinfo['extension'] === 'php' ){
-						
-						$tmpPath = $dir . basename($path,'.php');
+            if( is_dir($realPath) ){
 
-						$newPath = strtr($tmpPath, [$this->rootPath => '']);
-						
-						$keys = explode('/', $newPath);
+                $this->dirIter($realPath);
+            }else{
+                $pathinfo = pathinfo($path);
 
-						$i = &$this->container;
+                if( is_file($realPath) && $pathinfo['extension'] === 'php' ){
+                    
+                    $tmpPath = $dir . basename($path,'.php');
 
-						foreach ($keys as $value) {
-							$i[$value] = [];
-							$i = &$i[$value];
-						}
-						
-						$i = require $realPath;
-					}
-				}
-			}
+                    $newPath = strtr($tmpPath, [$this->rootPath => '']);
+                    
+                    $keys = explode('/', $newPath);
 
-			closedir($od);
-		}
+                    $i = &$this->container;
 
-		public function offsetExists($offset){
-			return array_key_exists($offset, $this->container);
-		}
+                    foreach ($keys as $value) {
+                        $i[$value] = [];
+                        $i = &$i[$value];
+                    }
+                    
+                    $i = require $realPath;
+                }
+            }
+        }
 
-		public function offsetGet($offset){
-			return isset($this->container[$offset])?$this->container[$offset]:null;
-		}
+        closedir($od);
+    }
 
-		public function offsetSet($offset,$value){
-			if(is_null($offset)){
-				$this->container[] = $value;
-			}else{
-				$this->container[$offset] = $value;
-			}
-		}
+    public function offsetExists($offset){
+        return array_key_exists($offset, $this->container);
+    }
 
-		public function offsetUnset($offset){
-			unset($this->container[$offset]);
-		}
-	}
+    public function offsetGet($offset){
+        return isset($this->container[$offset])?$this->container[$offset]:null;
+    }
+
+    public function offsetSet($offset,$value){
+        if(is_null($offset)){
+            $this->container[] = $value;
+        }else{
+            $this->container[$offset] = $value;
+        }
+    }
+
+    public function offsetUnset($offset){
+        unset($this->container[$offset]);
+    }
+}

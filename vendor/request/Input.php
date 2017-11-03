@@ -1,36 +1,36 @@
 <?php
-	
-	namespace vendor\request;
+    
+namespace vendor\request;
 
-	class Input{
+class Input{
 
-		private $input = [];
+    private $input = [];
 
-		private $allowTags = [];
+    private $allowTags = [];
 
-		private $allowAttr = [];
+    private $allowAttr = [];
 
-		public function __construct($allowTags = [],$allowAttr = []){
-			$this->input = array_merge($_GET,$_POST);
-			$this->allowAttr = $allowAttr;
-		}
+    public function __construct($allowTags = [],$allowAttr = []){
+        $this->input = array_merge($_GET,$_POST);
+        $this->allowAttr = $allowAttr;
+    }
 
-		public function get($key,$default = null){
-			return isset($this->input[$key])?$this->input[$key]:$default;
-		}
+    public function get($key,$default = null){
+        return isset($this->input[$key])?$this->input[$key]:$default;
+    }
 
-		public function all(){
-			return $this->input;
-		}
+    public function all(){
+        return $this->input;
+    }
 
-		public function except($key){
-			$list = $this->input;
+    public function except($key){
+        $list = $this->input;
 
-			if(array_key_exists($key, $list)){
-				unset($list[$key]);
-			}
+        if(array_key_exists($key, $list)){
+            unset($list[$key]);
+        }
 
-			return $list;
-		}
+        return $list;
+    }
 
-	}
+}

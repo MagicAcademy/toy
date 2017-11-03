@@ -5,9 +5,16 @@ namespace orm;
 use orm\DB;
 use orm\Statement;
 use \ReflectionClass;
+use \ReflectionMethod;
 use orm\exception\ORMException;
 
 class ORM{
+
+    const RELATIONS = [
+        'belongTo' => 0,
+        'hasOne' => 1,
+        'hasMany' => 2
+    ];
 
     protected $tableName = '';
 
@@ -24,6 +31,8 @@ class ORM{
     protected $relations = [];
 
     protected $isLazy = false;
+
+    protected $isJoin = false;
 
     public function __construct()
     {
@@ -50,10 +59,25 @@ class ORM{
         return $this->alias;
     }
 
+    protected function buildBelongTo(string $className)
+    {
+        $reflection = new ReflectionClass($className);
+        $reflectioMethod = $reflection->getMethod('belongTo' . ucfirst($reflection->getShortName()));
+        $instance = $reflection->newInstance();
+        $reflectionMethod->invoke($instance);
+    }
+
     public function find()
     {
         $this->getTable();
         $this->statement = $this->connect->table($this->tableName);
+        
+        if ($this->isJoin) {
+            foreach ($this->relations as $className => $relations) {
+                $this->build($className);
+            }
+        }
+
         $this->isFind = true;
         return $this->statement;
     }
@@ -87,11 +111,22 @@ class ORM{
         
     }
 
-    protected function belongTo(string $anotherORMName,array $columns)
+    protected function belongTo(string $anotherORMName,array $relations)
     {
         $this->relations[$anotherORMName] = [
-            'columns' => $columns
+            'relationPoint' => $relations,
+            'relation' => self::RELATIONS['hasOne']
         ];
+    }
+
+    protected function has(string $anotherORMName,array $relations)
+    {
+        $this->relations[$anotherORMName] = [
+            'relationPoint' => $relations,
+            'relation' => self::RELATIONS['belongTo']
+        ];
+
+        $this->isJoin = true;
     }
 
     public function lazyRelation()
@@ -104,14 +139,4 @@ class ORM{
         $this->columns[$name] = $value;
     }
 
-    public function __call(string $name,array $args)
-    {
-        if ( ($position = $strpos($name,'has',0)) !== 0 ) {
-            throw new ORMException();
-        }
-
-        $relationClassName = substr('string', 0, 3);
-        $reflectionClass = new ReflectionClass($relationClass);
-        $reflectionMethod = $reflectionClass->getMethod('belongTo' . static::class);
-    }
 }

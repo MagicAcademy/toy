@@ -1,19 +1,19 @@
 <?php
-	
-	namespace vendor\request;
 
-	use vendor\request\RequestException;
+namespace vendor\request;
 
-	class Request{
+use vendor\request\RequestException;
 
-		private $server = [];
+class Request{
 
-		public function __construct(){
-			$this->server = $_SERVER;
-		}
+    private $server = [];
 
-		public function __get($key){
-			$key = strtoupper($key);
-			return isset($this->server[$key])?$this->server[$key]:'';
-		}
-	}
+    public function __construct(){
+        $this->server = $_SERVER;
+    }
+
+    public function __get($key){
+        $key = strtoupper($key);
+        return isset($this->server[$key])?$this->server[$key]:'';
+    }
+}

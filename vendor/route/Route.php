@@ -1,146 +1,146 @@
 <?php
-	
-	namespace vendor\route;
 
-	use \Exception;
-	use vendor\route\RouteCollection;
-	use toyInterfaces\ResponseInterface;
-	use toyInterfaces\NotFoundInterface;
-	use \ArrayAccess;
-	
+namespace vendor\route;
 
-	class Route{
+use \Exception;
+use vendor\route\RouteCollection;
+use toyInterfaces\ResponseInterface;
+use toyInterfaces\NotFoundInterface;
+use \ArrayAccess;
 
-		private $notFound = null;
 
-		private $config = [];
+class Route{
 
-		private $matchList = [
-								'GET' => [
-											'pattern' => [],
-											'match' => []
-										],
-								'POST' => [
-											'pattern' => [],
-											'match' => []
-										],
-								'DELETE' => [
-												'pattern' => [],
-												'match' => []
-											],
-								'PUT' => [
-											'pattern' => [],
-											'match' => []
-										]
-							];
+    private $notFound = null;
 
-		public function __construct(NotFoundInterface $notFound = null){
-			$this->notFound = $notFound;
-		}
+    private $config = [];
 
-		public function setConfig($config){
-			if( is_array($config) || ($config instanceof ArrayAccess) ){
-				$this->config = $config;
-			}
-		}
+    private $matchList = [
+                            'GET' => [
+                                        'pattern' => [],
+                                        'match' => []
+                                    ],
+                            'POST' => [
+                                        'pattern' => [],
+                                        'match' => []
+                                    ],
+                            'DELETE' => [
+                                            'pattern' => [],
+                                            'match' => []
+                                        ],
+                            'PUT' => [
+                                        'pattern' => [],
+                                        'match' => []
+                                    ]
+                        ];
 
-		/**
-		 * [__call description]
-		 * @AuthorHTL neetdai
-		 * @DateTime  2017-05-13T13:43:01+0800
-		 * @param     [type]                   $name      [description]
-		 * @param     array                    $arguments [description]
-		 * @return    [type]                              [description]
-		 */
-		public function __call($name,array $arguments){
-			$argLength = count($arguments);
+    public function __construct(NotFoundInterface $notFound = null){
+        $this->notFound = $notFound;
+    }
 
-			if($argLength < 2){
-				throw new Exception('can\' match');
-			}
+    public function setConfig($config){
+        if( is_array($config) || ($config instanceof ArrayAccess) ){
+            $this->config = $config;
+        }
+    }
 
-			$upper = strtoupper($name);
+    /**
+     * [__call description]
+     * @AuthorHTL neetdai
+     * @DateTime  2017-05-13T13:43:01+0800
+     * @param     [type]                   $name      [description]
+     * @param     array                    $arguments [description]
+     * @return    [type]                              [description]
+     */
+    public function __call($name,array $arguments){
+        $argLength = count($arguments);
 
-			if(!array_key_exists($upper, $this->matchList)){
-				throw new Exception('not found this method :' . $name);
-			}
+        if($argLength < 2){
+            throw new Exception('can\' match');
+        }
 
-			$this->matchList[$upper]['pattern'][] = $this->convertRegular($arguments[0]);
-			
-			$collection = new RouteCollection($arguments[1],$this->config);
-			$this->matchList[$upper]['match'][] = $collection;
+        $upper = strtoupper($name);
 
-			return $collection;
-		}
+        if(!array_key_exists($upper, $this->matchList)){
+            throw new Exception('not found this method :' . $name);
+        }
 
-		/**
-		 * [convertRegular description]
-		 * @AuthorHTL neetdai
-		 * @DateTime  2017-05-13T14:48:52+0800
-		 * @param     string                   $uri [description]
-		 * @return    string                        [description]
-		 */
-		private function convertRegular($uri){
-			$start = '/';
-			$end = '/';
+        $this->matchList[$upper]['pattern'][] = $this->convertRegular($arguments[0]);
+        
+        $collection = new RouteCollection($arguments[1],$this->config);
+        $this->matchList[$upper]['match'][] = $collection;
 
-			$match = [
-				'@number@' => $this->numberRegular(),
-				'@string@' => '\w+',
-				'@more@' => '.*'
-			];
+        return $collection;
+    }
 
-			$uri = trim($uri);
-			
-			$first = strpos($uri, '@more@',0);
-			if($first === false || $first !== 0){
-				$start .= '^';
-			}
+    /**
+     * [convertRegular description]
+     * @AuthorHTL neetdai
+     * @DateTime  2017-05-13T14:48:52+0800
+     * @param     string                   $uri [description]
+     * @return    string                        [description]
+     */
+    private function convertRegular($uri){
+        $start = '/';
+        $end = '/';
 
-			$count = count($uri);
-			$last = strrpos($uri, '@more@',$count - 1);
-			if($last === false || $last < $count - 6){
-				$end = '$' . $end;
-			}
+        $match = [
+            '@number@' => $this->numberRegular(),
+            '@string@' => '\w+',
+            '@more@' => '.*'
+        ];
 
-			return $start . strtr(preg_quote($uri,'/'),$match) . $end;
-		}
+        $uri = trim($uri);
+        
+        $first = strpos($uri, '@more@',0);
+        if($first === false || $first !== 0){
+            $start .= '^';
+        }
 
-		private function numberRegular(){
-			return '(\d+|\d+.\d+)';
-		}
+        $count = count($uri);
+        $last = strrpos($uri, '@more@',$count - 1);
+        if($last === false || $last < $count - 6){
+            $end = '$' . $end;
+        }
 
-		/**
-		 * [match description]
-		 * @AuthorHTL neetdai
-		 * @DateTime  2017-05-13T13:40:27+0800
-		 * @return    [type]                   [description]
-		 */
-		public function match(){
-			$method = $_SERVER['REQUEST_METHOD'];
+        return $start . strtr(preg_quote($uri,'/'),$match) . $end;
+    }
 
-			$uri = explode($_SERVER['SCRIPT_NAME'],$_SERVER['REQUEST_URI'],2)[1];
-			
-			$matchs = $this->matchList[$method]['pattern'];
+    private function numberRegular(){
+        return '(\d+|\d+.\d+)';
+    }
 
-			foreach($matchs as $key=>$item){
-				if(preg_match($item, $uri)){
-					return $this->matchList[$method]['match'][$key]->done();
-				}
-			}
-			
-			if(is_null($this->notFound)){
-				return call_user_func(function(){
-					// http_response_code(404);
-					ob_start();
-					echo 'not found';
-					$content = ob_get_contents();
-					ob_flush();
-					http_response_code(404);
-					ob_end_flush();
-				});
-			}else{
-				throw $this->notFound;
-			}
-		}
-	}
+    /**
+     * [match description]
+     * @AuthorHTL neetdai
+     * @DateTime  2017-05-13T13:40:27+0800
+     * @return    [type]                   [description]
+     */
+    public function match(){
+        $method = $_SERVER['REQUEST_METHOD'];
+
+        $uri = explode($_SERVER['SCRIPT_NAME'],$_SERVER['REQUEST_URI'],2)[1];
+        
+        $matchs = $this->matchList[$method]['pattern'];
+
+        foreach($matchs as $key=>$item){
+            if(preg_match($item, $uri)){
+                return $this->matchList[$method]['match'][$key]->done();
+            }
+        }
+        
+        if(is_null($this->notFound)){
+            return call_user_func(function(){
+                // http_response_code(404);
+                ob_start();
+                echo 'not found';
+                $content = ob_get_contents();
+                ob_flush();
+                http_response_code(404);
+                ob_end_flush();
+            });
+        }else{
+            throw $this->notFound;
+        }
+    }
+}
