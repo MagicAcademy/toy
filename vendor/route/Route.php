@@ -1,9 +1,9 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace vendor\route;
+namespace route;
 
 use \Exception;
-use vendor\route\RouteCollection;
+use route\RouteCollection;
 use toyInterfaces\ResponseInterface;
 use toyInterfaces\NotFoundInterface;
 use \ArrayAccess;

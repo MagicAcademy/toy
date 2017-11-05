@@ -1,6 +1,6 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace vendor\route;
+namespace route;
 
 use \Exception;
 use \ReflectionClass;
@@ -11,7 +11,7 @@ class ClassBuilder{
 
     private $list = [];
 
-    public function __construct($classAndMethod = '',$delimiter = ''){
+    public function __construct(string $classAndMethod = '',string $delimiter = ''){
         $this->list = explode($delimiter, $classAndMethod,2);
     }
 
