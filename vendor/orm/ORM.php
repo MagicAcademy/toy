@@ -7,6 +7,7 @@ use orm\Statement;
 use \ReflectionClass;
 use \ReflectionMethod;
 use orm\exception\ORMException;
+use \stdClass;
 
 class ORM{
 
@@ -15,6 +16,14 @@ class ORM{
         'hasOne' => 1,
         'hasMany' => 2
     ];
+
+    const RELATION_TYPE = [
+        'hasOne',
+        'hasMany',
+        'belongTo'
+    ];
+
+    protected $primaryKey = '';
 
     protected $tableName = '';
 
@@ -32,11 +41,24 @@ class ORM{
 
     protected $isLazy = false;
 
-    protected $isJoin = false;
+    protected $rows = [];
 
     public function __construct()
     {
-        $this->setTable();
+        
+    }
+
+    public function getPrimaryKey(): string
+    {
+        $info = $this->connect->table('INFORMATION_SCHEMA.KEY_COLUMN_USAGE')
+                            ->where('TABLE_NAME',$this->getTable())
+                            ->one();
+
+        if ($info) {
+            $this->primaryKey = isset($info['CONSTRAINT_NAME']) && $info['CONSTRAINT_NAME'] === 'PRIMARY'?$info['COLUMN_NAME']:'';
+        }
+
+        return $this->primaryKey;
     }
 
     public function setDB(DB $connect)
@@ -44,10 +66,10 @@ class ORM{
         $this->connect = $connect;
     }
 
-    protected function setTable()
-    {
-        $this->tableName = strtolower(static::class);
-    }
+    // protected function setTable()
+    // {
+    //     $this->tableName = strtolower(static::class);
+    // }
 
     public function getTable(): string
     {
@@ -59,27 +81,73 @@ class ORM{
         return $this->alias;
     }
 
-    protected function buildBelongTo(string $className)
+    protected function hasOne(string $className,string $otherKey = '',string $selfKey = '')
     {
-        $reflection = new ReflectionClass($className);
-        $reflectioMethod = $reflection->getMethod('belongTo' . ucfirst($reflection->getShortName()));
-        $instance = $reflection->newInstance();
-        $reflectionMethod->invoke($instance);
+        return [
+            'className' => $className,
+            'relation' => self::RELATIONS['hasOne'],
+            'otherKey' => $otherKey,
+            'selfKey' => $selfKey
+        ];
+    }
+
+    protected function hasMany(string $className,string $otherKey = '',string $selfKey = '')
+    {
+        return [
+            'className' => $className,
+            'relation' => self::RELATIONS['hasMany'],
+            'otherKey' => $otherKey,
+            'selfKey' => $selfKey
+        ];
+    }
+
+    protected function belongTo(string $className,string $otherKey = '',string $selfKey = '')
+    {
+        return [
+            'className' => $className,
+            'relation' => self::RELATIONS['belongTo'],
+            'otherKey' => $otherKey,
+            'selfKey' => $selfKey
+        ];
     }
 
     public function find()
     {
-        $this->getTable();
-        $this->statement = $this->connect->table($this->tableName);
-        
-        if ($this->isJoin) {
-            foreach ($this->relations as $className => $relations) {
-                $this->build($className);
-            }
+        $this->statement = $this->connect->init()->table($this->getTable());
+        $this->isFind = true;
+        return $this;
+    }
+
+    public function one()
+    {
+        if ($this->isFind === false) {
+            $this->find();
         }
 
-        $this->isFind = true;
-        return $this->statement;
+        $rows = $this->statement->one();
+
+        $this->rows = $rows;
+
+        return $rows;
+    }
+
+    public function all()
+    {
+        if ($this->isFind === false) {
+            $this->find();
+        }
+
+        $rows = $this->statement->all();
+
+        $this->rows = $rows;
+
+        return $rows;
+    }
+
+    public function where()
+    {
+
+        return $this;
     }
 
     protected function beforeInsert()
@@ -111,27 +179,38 @@ class ORM{
         
     }
 
-    protected function belongTo(string $anotherORMName,array $relations)
+    public function __get(string $name)
     {
-        $this->relations[$anotherORMName] = [
-            'relationPoint' => $relations,
-            'relation' => self::RELATIONS['hasOne']
-        ];
-    }
+        if (!array_key_exists($name, $this->relations)) {
+            throw new ORMException($name . ' not relationship with this');
+        }
 
-    protected function has(string $anotherORMName,array $relations)
-    {
-        $this->relations[$anotherORMName] = [
-            'relationPoint' => $relations,
-            'relation' => self::RELATIONS['belongTo']
-        ];
+        $relation = $this->$name();
 
-        $this->isJoin = true;
-    }
+        $class = new $relation['className']();
+        if (!($class instanceof ORM)) {
+            throw new ORMException($relation['className'] . ' must type of ORM');
+        }
 
-    public function lazyRelation()
-    {
-        $this->isLazy = true;
+        $class->setDB($this->connect);
+        $statement = $class->find()->table($class->getTable());
+        
+        $classColumn = $relation['otherKey'];
+        $locationColumn = $relation['selfKey'];
+
+        if ($classColumn === '') {
+            $classColumn = $class->getPrimaryKey();
+        }
+
+        if ($locationColumn === '') {
+            $locationColumn = $this->getPrimaryKey();
+        }
+
+        if ($relation['relation'] & (self::RELATIONS['hasOne'] | self::RELATIONS['belongTo'])  ) {
+            
+        }
+
+        return $statement;
     }
 
     public function __set(string $name,$value)
@@ -139,4 +218,15 @@ class ORM{
         $this->columns[$name] = $value;
     }
 
+    public function __call(string $name,array $args = [])
+    {
+        if ($this->isFind === false) {
+            $this->find();
+        }
+
+        $reflectionMethod = new ReflectionMethod($this->statement,$name);
+        $reflectionMethod->invokeArgs($this->statement,$args);
+
+        return $this;
+    }
 }
