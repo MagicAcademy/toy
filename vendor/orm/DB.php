@@ -85,7 +85,7 @@ class DB{
     public function executeOne(string $sql,array $params)
     {
         $statement = $this->execute($sql,$params);
-        return $statement->fetch(PDO::FETCH_ASSOC);
+        return $statement->fetch(PDO::FETCH_OBJ);
     }
 
     public function executeAll(string $sql,array $params): array
