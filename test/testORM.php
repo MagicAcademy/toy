@@ -9,14 +9,22 @@ class Goods extends ORM
 {
     protected $alias = 'g';
 
-    public function hasOneGoodsColor()
-    {
-        return $this->has(GoodsColor::class,['and' => ['g.id']]);
-    }
+    protected $fields = [
+                            'id',
+                            'product_name',
+                            'amount',
+                            'total'
+                        ];
 
-    public function hasOneGoodsSize()
+    // protected $blockFields = ['id'];
+
+    protected $primaryKey = 'id';
+
+    protected $tableName = 'goods';
+
+    public function goodsColor()
     {
-        return $this->has(GoodsSize::class,['and' => ['g.id']]);
+        return $this->hasMany('GoodsColor','id','id');
     }
 }
 
@@ -25,20 +33,23 @@ class GoodsColor extends ORM
 {
     protected $alias = 'gc';
 
-    public function belongToGoods()
-    {
-        return $this->belongTo(Goods::class,['and' => ['gc.id']]);
-    }
+    protected $fields = [
+                            'id',
+                            'name'
+                        ];
+
+    protected $primaryKey = 'id';
+
+    protected $tableName = 'goods_color';
 }
 
 class GoodsSize extends ORM
 {
     protected $alias = 'gs';
 
-    public function belongToGoods()
-    {
-        return $this->belongTo(Goods::class,['and' => ['gs.id']]);
-    }
+    protected $fields = [
+                            'id'
+                        ];
 }
 
 
@@ -71,12 +82,37 @@ $goods = new Goods();
 
 $goods->setDB($statment);
 
-var_dump($goods->hasOneGoodsColor()->find());
+// 没有这个id
+// foreach ($goods->find()->all() as $key => $value) {
+//     // var_dump($value->id);
+//     var_dump($value->product_name);
+//     // var_dump($value->goodsColor);
+//     var_dump($value->goodsColor);
+// }
 
-// var_dump($goods->find()->one());
+var_dump($goods->asJson());
 
-// var_dump($goods->find()->all());
+// 报错 原因是找不到数据
+// $result = $goods->find()->where('id',9999)->one();
 
-// var_dump($goods->find()->where('id',1)->all());
+// var_dump($result->id);
+var_dump($goods->asJson());
+foreach ($goods->find()->one() as $key => $value) {
+    // var_dump($value->id);
+    var_dump($value->product_name);
+    var_dump($value->goodsColor);
+    // var_dump($value->goodsColor->color_name);
+}
+
+$a = clone $goods->find()->one();
+var_dump($goods->asJson());
+
+
+foreach ($goods->find()->one() as $key => $value) {
+    // var_dump($value->id);
+    var_dump($value->goodsColor[0]->id);
+    // var_dump($value->goodsColor->color_name);
+}
+
 
 var_dump($statment->queryInfoLog());
